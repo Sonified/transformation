@@ -144,7 +144,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
 .pi-eq{display:none;align-items:flex-end;gap:2px;height:14px}
 .playlist-item.active .pi-eq{display:flex}
-.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:3px;transition:height .35s ease-in-out}
+.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:3px}
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
@@ -781,17 +781,24 @@ loadThumbnails();
 // ── Audio Player Mode ──
 let audioPlayer = null;
 let audioVideoId = null;
-let eqInterval = null;
+let eqTimers = [];
 function startEq() {
   stopEq();
-  eqInterval = setInterval(() => {
-    const bars = document.querySelectorAll('.playlist-item.active.playing .pi-eq span');
-    bars.forEach(b => { b.style.height = (4 + Math.random() * 8) + 'px'; });
-  }, 400);
+  const bars = document.querySelectorAll('.playlist-item.active.playing .pi-eq span');
+  bars.forEach((b, i) => {
+    const tick = () => {
+      const dur = 300 + Math.random() * 500;
+      b.style.transition = `height ${dur}ms ease-in-out`;
+      b.style.height = (4 + Math.random() * 8) + 'px';
+      eqTimers[i] = setTimeout(tick, dur);
+    };
+    setTimeout(tick, i * 120);
+  });
 }
 function stopEq() {
-  if (eqInterval) { clearInterval(eqInterval); eqInterval = null; }
-  document.querySelectorAll('.pi-eq span').forEach(b => { b.style.height = '3px'; });
+  eqTimers.forEach(t => clearTimeout(t));
+  eqTimers = [];
+  document.querySelectorAll('.pi-eq span').forEach(b => { b.style.transition = 'height .3s ease-out'; b.style.height = '3px'; });
 }
 let viewMode = localStorage.getItem('view_mode') || 'thumbnails';
 document.querySelectorAll('#view-mode .pill').forEach(p => {
