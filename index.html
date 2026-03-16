@@ -147,6 +147,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
+  header{padding:1.5rem 1rem .8rem}
+  header h1{font-size:1.5rem}
+  header p{margin-top:.2rem;font-size:.8rem}
+  .controls{gap:1rem;padding:.4rem 1rem}
   .audio-player-bar{display:none !important}
   .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:0}
   .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom))}
