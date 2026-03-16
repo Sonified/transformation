@@ -86,8 +86,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .ap-btn{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.3rem .5rem;border-radius:6px;transition:background .15s}
 .ap-btn:hover{background:rgba(255,255,255,.1)}
 .ap-btn.play-pause{font-size:1.6rem}
-.ap-progress{width:100%;height:4px;background:var(--progress-bg);cursor:pointer;position:relative;transition:height .15s}
-.ap-progress:hover{height:10px}
+.ap-progress{width:100%;height:4px;background:var(--progress-bg);cursor:pointer;position:relative;transition:height .15s;border-radius:12px 12px 0 0;overflow:visible}
+.ap-progress:hover{height:8px}
 .ap-progress .ap-fill{height:100%;background:var(--accent);pointer-events:none;transition:width .2s}
 .ap-progress .ap-ticks{position:absolute;bottom:100%;left:0;right:0;height:28px;pointer-events:none;opacity:0;transition:opacity .15s}
 .ap-progress:hover .ap-ticks{opacity:1}
@@ -168,7 +168,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <div id="playlist-view" style="display:none"></div>
 
 <div class="audio-player-bar" id="audio-bar">
-  <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)" onmousemove="showHoverTime(event)" style="padding:8px 0;margin:-8px 0;box-sizing:content-box">
+  <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)" onmousemove="showHoverTime(event)">
     <div class="ap-fill" id="ap-fill"></div>
     <div class="ap-ticks" id="ap-ticks"></div>
     <div class="ap-hover-time" id="ap-hover-time">0:00</div>
