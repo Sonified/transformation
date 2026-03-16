@@ -143,8 +143,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-item .pi-progress .pi-fill{height:100%;background:var(--accent)}
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
 .pi-eq{display:none;align-items:flex-end;gap:2px;height:14px}
-.playlist-item.active .pi-eq{display:flex}
-.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:3px}
+.playlist-item.active.playing .pi-eq{display:flex}
+.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:0;transition:height .3s ease-out}
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
@@ -250,10 +250,6 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
         <span class="np-time" id="np-time-dur">0:00</span>
       </div>
     </div>
-  </div>
-  <div id="ap-recent-section" class="playlist-container" style="display:none">
-    <h2 style="font-size:.85rem;margin:1rem 0 .5rem;color:var(--text-dim)">Continue</h2>
-    <div id="ap-recent-row"></div>
   </div>
   <div class="playlist-container" id="playlist-container"></div>
 </div>
@@ -782,25 +778,7 @@ function renderRecentlyPlayed(limit) {
 renderRecentlyPlayed();
 loadThumbnails();
 
-function renderApRecent() {
-  const recent = getRecentlyPlayed();
-  const section = document.getElementById('ap-recent-section');
-  const row = document.getElementById('ap-recent-row');
-  if (!recent.length) { section.style.display = 'none'; return; }
-  const id = recent[0];
-  const v = allVideosList.find(x => x.id === id);
-  if (!v) { section.style.display = 'none'; return; }
-  section.style.display = '';
-  const prog = getProgress(id);
-  const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
-  const watched = pct > 90;
-  const playing = id === audioVideoId;
-  row.innerHTML = `<div class="playlist-item active${playing ? ' playing' : ''}" style="border:1px solid var(--accent);background:rgba(124,92,191,.1)" onclick="audioPlay('${v.id}','${v.title.replace(/'/g,"\\'")}')">
-    <span class="pi-eq"><span></span><span></span><span></span></span>
-    <span class="pi-title">${v.title}</span>
-    ${watched ? '<span class="pi-watched">✓</span>' : pct > 0 ? `<div class="pi-progress"><div class="pi-fill" style="width:${pct}%"></div></div>` : ''}
-  </div>`;
-}
+function renderApRecent() {}
 
 // ── Audio Player Mode ──
 let audioPlayer = null;
@@ -822,7 +800,7 @@ function startEq() {
 function stopEq() {
   eqTimers.forEach(t => clearTimeout(t));
   eqTimers = [];
-  document.querySelectorAll('.pi-eq span').forEach(b => { b.style.transition = 'height .3s ease-out'; b.style.height = '3px'; });
+  document.querySelectorAll('.pi-eq span').forEach(b => { b.style.transition = 'height .3s ease-out'; b.style.height = '0'; });
 }
 let viewMode = localStorage.getItem('view_mode') || 'thumbnails';
 document.querySelectorAll('#view-mode .pill').forEach(p => {
@@ -900,6 +878,24 @@ function setViewMode(mode) {
 function renderPlaylist() {
   const el = document.getElementById('playlist-container');
   let html = '';
+  const recentId = getRecentlyPlayed()[0];
+  const recentV = recentId ? allVideosList.find(x => x.id === recentId) : null;
+  if (recentV) {
+    const rProg = getProgress(recentV.id);
+    const rPct = rProg ? Math.round((rProg.position / rProg.duration) * 100) : 0;
+    const rWatched = rPct > 90;
+    const rPlaying = recentV.id === audioVideoId;
+    const rCached = sessionStorage.getItem(`oembed_${recentV.id}`);
+    const rDur = rCached ? JSON.parse(rCached).duration : null;
+    const rDurStr = rDur ? `${Math.floor(rDur/60)}:${String(rDur%60).padStart(2,'0')}` : '';
+    html += `<div class="section"><h2>Continue</h2>
+      <div class="playlist-item active${rPlaying ? ' playing' : ''}" data-id="${recentV.id}" onclick="audioPlay('${recentV.id}','${recentV.title.replace(/'/g,"\\'")}')">
+        <span class="pi-eq"><span></span><span></span><span></span></span>
+        <span class="pi-title">${recentV.title}</span>
+        ${rWatched ? '<span class="pi-watched">✓</span>' : rPct > 0 ? `<div class="pi-progress"><div class="pi-fill" style="width:${rPct}%"></div></div>` : ''}
+        <span class="pi-dur">${rDurStr}</span>
+      </div></div>`;
+  }
   let num = 0;
   VIDEOS.forEach(section => {
     html += `<div class="section"><h2>${section.section}</h2>`;
@@ -1131,7 +1127,9 @@ function seekAudioNPEnd(e) {
   npDragBar = null;
   document.getElementById('np-fill').style.width = (p * 100) + '%';
   audioPlayer.setVolume(1).catch(() => {});
-  audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * p)).catch(() => {});
+  audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * p).then(() => {
+    audioPlayer.play().catch(() => {});
+  })).catch(() => {});
 }
 
 let currentAudioDuration = 0;
