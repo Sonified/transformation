@@ -42,15 +42,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .card.is-watched .watched-badge{display:flex}
 .card.is-watched .thumb img{opacity:.7}
 
-/* Card split click zones */
-.card .click-zones{position:absolute;inset:0;display:flex;z-index:3;border-radius:10px 10px 0 0;overflow:hidden}
-.card .click-zone{flex:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s,background .15s}
-.card:hover .click-zone{opacity:1}
-.card .click-zone.zone-player{background:rgba(0,0,0,.6);border-right:1px solid rgba(255,255,255,.15)}
-.card .click-zone.zone-fullscreen{background:rgba(0,0,0,.6)}
-.card .click-zone.zone-player:hover{background:rgba(124,92,191,.5)}
-.card .click-zone.zone-fullscreen:hover{background:rgba(124,92,191,.5)}
-.click-zone span{color:#fff;font-size:.8rem;font-weight:500;pointer-events:none}
+/* Cards are clickable, mode set globally */
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:2rem}
@@ -200,6 +192,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
     Autoplay
     <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
   </label>
+  <div class="pill-toggle" id="playback-mode">
+    <button class="pill active" data-mode="player" onclick="setPlaybackMode('player')">▶ Player</button>
+    <button class="pill" data-mode="fullscreen" onclick="setPlaybackMode('fullscreen')">⛶ Full Screen</button>
+  </div>
   <div class="pill-toggle" id="view-mode">
     <button class="pill active" data-mode="thumbnails" onclick="setViewMode('thumbnails')">Thumbnails</button>
     <button class="pill" data-mode="audio" onclick="setViewMode('audio')">Audio Player</button>
@@ -412,6 +408,20 @@ let currentVideoId = null;
 // Flat list of all video IDs in order for autoplay
 const ALL_IDS = VIDEOS.flatMap(s => s.items.map(v => v.id));
 
+// Playback mode
+let playbackMode = localStorage.getItem('playback_mode') || 'player';
+document.querySelectorAll('#playback-mode .pill').forEach(p => {
+  p.classList.toggle('active', p.dataset.mode === playbackMode);
+});
+
+function setPlaybackMode(mode) {
+  playbackMode = mode;
+  localStorage.setItem('playback_mode', mode);
+  document.querySelectorAll('#playback-mode .pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.mode === mode);
+  });
+}
+
 // Autoplay
 let autoplayEnabled = JSON.parse(localStorage.getItem('autoplay') || 'false');
 const autoplayToggle = document.getElementById('autoplay-toggle');
@@ -489,13 +499,8 @@ VIDEOS.forEach(section => {
       const prog = getProgress(v.id);
       const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
       const watched = pct > 90;
-      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}">
-        <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
-          <div class="click-zones">
-            <div class="click-zone zone-player" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')"><span>▶ Player</span></div>
-            <div class="click-zone zone-fullscreen" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')"><span>⛶ Full Screen</span></div>
-          </div>
-        </div>
+      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', playbackMode)">
+        <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
         <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
         <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? `<span>${pct}%</span>` : ''}</div></div>
       </div>`;
@@ -692,13 +697,8 @@ function renderRecentlyPlayed() {
     const prog = getProgress(id);
     const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
     const watched = pct > 90;
-    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}">
-      <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
-        <div class="click-zones">
-          <div class="click-zone zone-player" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')"><span>▶ Player</span></div>
-          <div class="click-zone zone-fullscreen" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')"><span>⛶ Full Screen</span></div>
-        </div>
-      </div>
+    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', playbackMode)">
+      <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
       <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
       <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
     </div>`;
