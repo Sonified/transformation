@@ -623,7 +623,7 @@ function openPlayer(videoId, title, mode) {
       document.querySelector('.modal .player-wrap').style.paddingTop = '0';
       document.querySelector('.modal .player-wrap').style.height = '60px';
     } else if (mode === 'fullscreen') {
-      player.requestFullscreen().catch(() => {});
+      player.play().then(() => player.requestFullscreen()).catch(() => {});
     }
   }).catch(() => {});
 
