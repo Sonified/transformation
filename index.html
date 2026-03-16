@@ -39,6 +39,17 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .modal .modal-header button{background:none;border:none;color:var(--text-dim);font-size:1.5rem;cursor:pointer;line-height:1}
 .modal .modal-header button:hover{color:#fff}
 
+/* Controls bar */
+.controls{max-width:1200px;margin:0 auto;padding:.8rem 1rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.controls label{font-size:.8rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem;cursor:pointer}
+.controls select{background:#1a1a2a;color:var(--text);border:1px solid #333;border-radius:6px;padding:.3rem .5rem;font-size:.8rem;cursor:pointer}
+.controls select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+.toggle{position:relative;width:36px;height:20px;background:#333;border-radius:10px;cursor:pointer;transition:background .2s}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle.on::after{transform:translateX(16px)}
+.sleep-active{color:var(--accent-glow);font-size:.75rem;font-weight:500}
+
 /* Reset progress button */
 .reset-all{position:fixed;bottom:1rem;right:1rem;background:#333;color:var(--text-dim);border:none;padding:.4rem .8rem;border-radius:6px;font-size:.7rem;cursor:pointer;opacity:.4;transition:opacity .2s}
 .reset-all:hover{opacity:1;color:#fff}
@@ -49,6 +60,24 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <h1>Transformation</h1>
 <p>Dr. Joe Dispenza — Progressive Online Workshop</p>
 </header>
+
+<div class="controls">
+  <label>
+    Sleep Timer
+    <select id="sleep-timer" onchange="setSleepTimer(this.value)">
+      <option value="0">Off</option>
+      <option value="15">15 min</option>
+      <option value="30">30 min</option>
+      <option value="45">45 min</option>
+      <option value="60">60 min</option>
+    </select>
+    <span id="sleep-status"></span>
+  </label>
+  <label>
+    Autoplay
+    <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
+  </label>
+</div>
 
 <div id="app"></div>
 
@@ -124,6 +153,77 @@ const app = document.getElementById('app');
 let currentPlayer = null;
 let saveInterval = null;
 let currentVideoId = null;
+
+// Flat list of all video IDs in order for autoplay
+const ALL_IDS = VIDEOS.flatMap(s => s.items.map(v => v.id));
+
+// Autoplay
+let autoplayEnabled = JSON.parse(localStorage.getItem('autoplay') || 'false');
+const autoplayToggle = document.getElementById('autoplay-toggle');
+if (autoplayEnabled) autoplayToggle.classList.add('on');
+
+function toggleAutoplay() {
+  autoplayEnabled = !autoplayEnabled;
+  autoplayToggle.classList.toggle('on', autoplayEnabled);
+  localStorage.setItem('autoplay', JSON.stringify(autoplayEnabled));
+}
+
+function playNext(currentId) {
+  const idx = ALL_IDS.indexOf(currentId);
+  if (idx < 0 || idx >= ALL_IDS.length - 1) return;
+  const nextId = ALL_IDS[idx + 1];
+  const nextVideo = VIDEOS.flatMap(s => s.items).find(v => v.id === nextId);
+  if (nextVideo) {
+    closePlayer();
+    setTimeout(() => openPlayer(nextId, nextVideo.title), 300);
+  }
+}
+
+// Sleep timer
+let sleepTimeout = null;
+let sleepEndTime = null;
+let sleepCountdown = null;
+
+function setSleepTimer(minutes) {
+  clearTimeout(sleepTimeout);
+  clearInterval(sleepCountdown);
+  const status = document.getElementById('sleep-status');
+  if (!minutes || minutes === '0') {
+    sleepTimeout = null;
+    sleepEndTime = null;
+    status.textContent = '';
+    status.className = '';
+    return;
+  }
+  const ms = parseInt(minutes) * 60 * 1000;
+  sleepEndTime = Date.now() + ms;
+  sleepTimeout = setTimeout(() => {
+    if (currentPlayer) {
+      currentPlayer.pause();
+      closePlayer();
+    }
+    sleepEndTime = null;
+    status.textContent = '';
+    status.className = '';
+    document.getElementById('sleep-timer').value = '0';
+  }, ms);
+  // Countdown display
+  function updateCountdown() {
+    if (!sleepEndTime) return;
+    const remaining = Math.max(0, sleepEndTime - Date.now());
+    const m = Math.floor(remaining / 60000);
+    const s = String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0');
+    status.textContent = `${m}:${s}`;
+    status.className = 'sleep-active';
+    if (remaining <= 0) {
+      clearInterval(sleepCountdown);
+      status.textContent = '';
+      status.className = '';
+    }
+  }
+  updateCountdown();
+  sleepCountdown = setInterval(updateCountdown, 1000);
+}
 
 // Render sections
 VIDEOS.forEach(section => {
@@ -242,6 +342,7 @@ function openPlayer(videoId, title) {
 
   player.on('ended', function() {
     player.getDuration().then(dur => saveProgress(dur, dur));
+    if (autoplayEnabled) playNext(videoId);
   });
 }
 
