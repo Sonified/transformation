@@ -222,6 +222,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
         <div class="np-bar" onclick="seekAudioNP(event)"><div class="np-fill" id="np-fill"></div></div>
         <span class="np-time" id="np-time-dur">0:00</span>
       </div>
+      <div id="np-player-container" style="width:1px;height:1px;overflow:hidden;opacity:0;position:absolute"></div>
     </div>
   </div>
   <div class="playlist-container" id="playlist-container"></div>
@@ -773,7 +774,10 @@ function audioPlay(videoId, title) {
   // Destroy previous
   if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
 
-  const container = document.getElementById('ap-hidden-player');
+  const isMobileAudio = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const container = isMobileAudio
+    ? document.getElementById('np-player-container')
+    : document.getElementById('ap-hidden-player');
   container.innerHTML = '<div id="ap-vimeo"></div>';
 
   audioPlayer = new Vimeo.Player('ap-vimeo', {
@@ -785,18 +789,19 @@ function audioPlay(videoId, title) {
   });
 
   audioPlayer.ready().then(() => {
-    return audioPlayer.setVolume(1);
-  }).then(() => {
+    audioPlayer.setVolume(1);
     return audioPlayer.getDuration();
   }).then(dur => {
     buildTicks(dur);
     const prog = getProgress(videoId);
-    if (prog && prog.position > 5 && (prog.position / prog.duration) < 0.95) {
-      return audioPlayer.setCurrentTime(prog.position);
-    }
-  }).then(() => {
-    return audioPlayer.play();
-  }).catch(() => {});
+    const seekTo = (prog && prog.position > 5 && (prog.position / prog.duration) < 0.95) ? prog.position : null;
+    // On iOS, play() must be called as close to user gesture as possible
+    return audioPlayer.play().then(() => {
+      if (seekTo) return audioPlayer.setCurrentTime(seekTo);
+    });
+  }).catch(err => {
+    console.log('Audio play failed:', err);
+  });
 
   // Progress tracking
   let lastSave = 0;
