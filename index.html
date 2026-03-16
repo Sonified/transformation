@@ -62,8 +62,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .modal .modal-header button:hover{color:#fff}
 
 /* Controls bar */
-.controls{max-width:1200px;margin:0 auto;padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.controls-left,.controls-right{display:flex;align-items:center;gap:1.5rem}
+.controls{max-width:1200px;margin:0 auto;padding:.8rem 1rem;display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap}
 .controls label{font-size:.8rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem;cursor:pointer}
 .controls select{background:#1a1a2a;color:var(--text);border:1px solid #333;border-radius:6px;padding:.3rem .5rem;font-size:.8rem;cursor:pointer}
 .controls select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
@@ -178,31 +177,27 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 </header>
 
 <div class="controls">
-  <div class="controls-left">
-    <label>Playback
-      <div class="pill-toggle" id="view-mode">
-        <button class="pill active" data-mode="thumbnails" onclick="setViewMode('thumbnails')">Video</button>
-        <button class="pill" data-mode="audio" onclick="setViewMode('audio')">Audio</button>
-      </div>
-    </label>
-    <label>
-      Autoplay
-      <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
-    </label>
-  </div>
-  <div class="controls-right">
-    <label>
-      Sleep Timer
-      <select id="sleep-timer" onchange="setSleepTimer(this.value)">
-        <option value="0">Off</option>
-        <option value="15">15 min</option>
-        <option value="30">30 min</option>
-        <option value="45">45 min</option>
-        <option value="60">60 min</option>
-      </select>
-      <span id="sleep-status"></span>
-    </label>
-  </div>
+  <label>Playback
+    <div class="pill-toggle" id="view-mode">
+      <button class="pill active" data-mode="thumbnails" onclick="setViewMode('thumbnails')">Video</button>
+      <button class="pill" data-mode="audio" onclick="setViewMode('audio')">Audio</button>
+    </div>
+  </label>
+  <label>
+    Autoplay
+    <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
+  </label>
+  <label>
+    Sleep Timer
+    <select id="sleep-timer" onchange="setSleepTimer(this.value)">
+      <option value="0">Off</option>
+      <option value="15">15 min</option>
+      <option value="30">30 min</option>
+      <option value="45">45 min</option>
+      <option value="60">60 min</option>
+    </select>
+    <span id="sleep-status"></span>
+  </label>
 </div>
 
 <div id="playlist-view" style="display:none">
