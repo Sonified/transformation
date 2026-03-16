@@ -91,17 +91,17 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .audio-player-bar .ap-main{min-height:56px}
 .ap-btn.skip{color:var(--text-dim);font-size:.75rem}
 .ap-progress{width:100%;height:6px;background:var(--progress-bg);cursor:pointer;position:relative;transition:height .15s;border-radius:12px 12px 0 0;overflow:visible}
-.ap-progress:hover{height:12px}
+.ap-progress:hover,.ap-progress.dragging{height:12px}
 .ap-progress .ap-fill{height:100%;background:var(--accent);pointer-events:none;transition:width .2s;border-radius:12px 0 0 0}
 .ap-progress .ap-ticks{position:absolute;bottom:100%;left:0;right:0;height:28px;pointer-events:none;opacity:0;transition:opacity .15s}
-.ap-progress:hover .ap-ticks{opacity:1}
+.ap-progress:hover .ap-ticks,.ap-progress.dragging .ap-ticks{opacity:1}
 .ap-progress .ap-tick{position:absolute;bottom:0;width:1px;background:rgba(255,255,255,.25)}
 .ap-progress .ap-tick.hour{background:rgba(255,255,255,.6);width:2px}
 .ap-progress .ap-tick-label{position:absolute;bottom:100%;transform:translateX(-50%);font-size:.6rem;color:var(--text-dim);white-space:nowrap}
 .ap-progress .ap-playhead{position:absolute;top:50%;width:14px;height:14px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 4px rgba(0,0,0,.5);opacity:0;transition:opacity .15s;pointer-events:none;z-index:2}
 .ap-progress:hover .ap-playhead,.ap-progress.dragging .ap-playhead{opacity:1}
 .ap-progress .ap-hover-time{position:absolute;bottom:100%;transform:translateX(-50%);background:#222;color:#fff;font-size:.7rem;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;margin-bottom:4px}
-.ap-progress:hover .ap-hover-time{opacity:1}
+.ap-progress:hover .ap-hover-time,.ap-progress.dragging .ap-hover-time{opacity:1}
 .ap-hidden-player{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.01;pointer-events:none}
 
 /* Now Playing card */
