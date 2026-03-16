@@ -153,6 +153,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .recent-row::-webkit-scrollbar{height:4px}
 .recent-row::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
 .recent-row .card{min-width:220px;max-width:220px;flex-shrink:0}
+.recent-row .card.last-played{border:1.5px solid var(--accent);box-shadow:0 0 12px rgba(124,92,191,.25)}
 
 /* Reset progress button */
 .reset-all{position:fixed;bottom:1rem;right:1rem;background:#333;color:var(--text-dim);border:none;padding:.4rem .8rem;border-radius:6px;font-size:.7rem;cursor:pointer;opacity:.4;transition:opacity .2s}
@@ -680,13 +681,13 @@ function renderRecentlyPlayed() {
   const row = document.getElementById('recent-row');
   if (!recent.length) { section.style.display = 'none'; return; }
   section.style.display = '';
-  row.innerHTML = recent.map(id => {
+  row.innerHTML = recent.map((id, idx) => {
     const v = allVideosList.find(x => x.id === id);
     if (!v) return '';
     const prog = getProgress(id);
     const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
     const watched = pct > 90;
-    return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}">
+    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}">
       <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
         <div class="click-zones">
           <div class="click-zone zone-player" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')"><span>▶ Player</span></div>
