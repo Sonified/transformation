@@ -135,8 +135,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-item.active{background:var(--card);border-left:3px solid var(--accent)}
 .playlist-item .pi-num{color:var(--text-dim);font-size:.75rem;min-width:18px;text-align:center;flex-shrink:0}
 .playlist-item.active .pi-num{color:var(--accent)}
-.pi-eq{display:none;align-items:flex-end;gap:2px;height:14px;flex-shrink:0;width:14px}
-.playlist-item.active.playing .pi-eq{display:flex}
+.pi-eq{display:flex;align-items:flex-end;gap:2px;height:14px;flex-shrink:0;width:14px;visibility:hidden}
+.playlist-item.active.playing .pi-eq{visibility:visible}
 .pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:0;transition:height .3s ease-out}
 .playlist-item .pi-title{flex:1;font-size:.85rem;margin-left:.1rem}
 .playlist-item.active .pi-title{color:var(--accent-glow)}
