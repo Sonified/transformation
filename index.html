@@ -1099,7 +1099,7 @@ let npDragBar = null;
 
 function npBarPct(e, bar) {
   const rect = bar.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+  const clientX = (e.touches && e.touches.length) ? e.touches[0].clientX : (e.changedTouches && e.changedTouches.length) ? e.changedTouches[0].clientX : e.clientX;
   return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
 }
 
