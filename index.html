@@ -406,9 +406,12 @@ function getProgress(id) {
 
 function openPlayer(videoId, title) {
   currentVideoId = videoId;
+  const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal').classList.add('active');
-  document.body.style.overflow = 'hidden';
+  if (!isMobileDevice) {
+    document.getElementById('modal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
 
   const container = document.getElementById('player-container');
   container.innerHTML = '';
@@ -427,22 +430,38 @@ function openPlayer(videoId, title) {
 
   // Resume position then play — keeping it in the user gesture chain for mobile
   const prog = getProgress(videoId);
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
   player.ready().then(() => {
     return player.setVolume(1);
   }).then(() => {
     const seekFirst = prog && prog.position > 5 && (prog.position / prog.duration) < 0.95;
     if (seekFirst) return player.setCurrentTime(prog.position);
   }).then(() => {
-    if (isMobile) {
-      // On mobile: go fullscreen, let native controls handle play
+    if (isMobileDevice) {
       return player.requestFullscreen().catch(() => {});
     } else {
-      // On desktop: autoplay in modal
       return player.play();
     }
   }).catch(() => {});
+
+  // On mobile, when exiting fullscreen, clean up immediately (no modal to dismiss)
+  if (isMobileDevice) {
+    player.on('fullscreenchange', function(data) {
+      if (!data.fullscreen) {
+        // Save final position before cleanup
+        Promise.all([player.getCurrentTime(), player.getDuration()]).then(([pos, dur]) => {
+          localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+            position: pos, duration: dur, timestamp: Date.now()
+          }));
+          updateCardProgress(videoId, pos, dur);
+        }).finally(() => {
+          player.destroy();
+          currentPlayer = null;
+          currentVideoId = null;
+          document.getElementById('player-container').innerHTML = '';
+        });
+      }
+    });
+  }
 
   function saveProgress(seconds, duration) {
     localStorage.setItem(`progress_${videoId}`, JSON.stringify({
