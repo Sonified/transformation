@@ -219,6 +219,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <div id="playlist-view" style="display:none">
   <div class="now-playing">
     <div class="now-playing-card" id="now-playing-card">
+      <div id="np-player-container" style="width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:.6rem;display:none"></div>
       <div class="now-playing-label">Now Playing</div>
       <div class="now-playing-title" id="np-title">Select a track</div>
       <div class="now-playing-controls">
@@ -233,7 +234,6 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
         <div class="np-bar" onclick="seekAudioNP(event)"><div class="np-fill" id="np-fill"></div></div>
         <span class="np-time" id="np-time-dur">0:00</span>
       </div>
-      <div id="np-player-container" style="width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:.6rem;display:none"></div>
     </div>
   </div>
   <div class="playlist-container" id="playlist-container"></div>
