@@ -76,6 +76,31 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .toggle.on::after{transform:translateX(16px)}
 .sleep-active{color:var(--accent-glow);font-size:.75rem;font-weight:500}
 
+/* Audio player mode */
+.audio-player-bar{position:fixed;bottom:0;left:0;right:0;background:#151520;border-top:1px solid #252535;z-index:900;display:none;flex-direction:column;padding:0}
+.audio-player-bar.active{display:flex}
+.audio-player-bar .ap-main{display:flex;align-items:center;gap:.8rem;padding:.6rem 1rem}
+.audio-player-bar .ap-title{flex:1;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.audio-player-bar .ap-time{font-size:.75rem;color:var(--text-dim);min-width:90px;text-align:center}
+.ap-btn{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.3rem .5rem;border-radius:6px;transition:background .15s}
+.ap-btn:hover{background:rgba(255,255,255,.1)}
+.ap-btn.play-pause{font-size:1.6rem}
+.ap-progress{width:100%;height:4px;background:var(--progress-bg);cursor:pointer;position:relative}
+.ap-progress .ap-fill{height:100%;background:var(--accent);pointer-events:none;transition:width .2s}
+.ap-hidden-player{position:fixed;bottom:-500px;left:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
+
+/* Playlist view */
+.playlist{max-width:800px;margin:0 auto;padding:0 1rem 6rem}
+.playlist-item{display:flex;align-items:center;gap:.8rem;padding:.7rem .8rem;border-bottom:1px solid #1a1a2a;cursor:pointer;transition:background .15s;border-radius:6px}
+.playlist-item:hover{background:var(--card-hover)}
+.playlist-item.active{background:var(--card);border-color:var(--accent)}
+.playlist-item .pi-num{color:var(--text-dim);font-size:.75rem;min-width:24px;text-align:center}
+.playlist-item .pi-title{flex:1;font-size:.85rem}
+.playlist-item .pi-dur{color:var(--text-dim);font-size:.75rem}
+.playlist-item .pi-progress{width:40px;height:3px;background:var(--progress-bg);border-radius:2px;overflow:hidden}
+.playlist-item .pi-progress .pi-fill{height:100%;background:var(--accent)}
+.playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
+
 /* Recently played */
 .recent-row{display:flex;gap:1rem;overflow-x:auto;padding-bottom:.5rem;-webkit-overflow-scrolling:touch}
 .recent-row::-webkit-scrollbar{height:4px}
@@ -122,7 +147,32 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
     Autoplay
     <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
   </label>
+  <label>
+    Mode
+    <select id="view-mode" onchange="setViewMode(this.value)">
+      <option value="thumbnails">Thumbnails</option>
+      <option value="audio">Audio Player</option>
+    </select>
+  </label>
 </div>
+
+<div id="playlist-view" style="display:none"></div>
+
+<div class="audio-player-bar" id="audio-bar">
+  <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)">
+    <div class="ap-fill" id="ap-fill"></div>
+  </div>
+  <div class="ap-main">
+    <button class="ap-btn" onclick="audioSkip(-1)" title="Previous">⏮</button>
+    <button class="ap-btn" onclick="audioSeekRel(-15)" title="Back 15s">-15</button>
+    <button class="ap-btn play-pause" id="ap-play-btn" onclick="audioTogglePlay()">▶</button>
+    <button class="ap-btn" onclick="audioSeekRel(15)" title="Forward 15s">+15</button>
+    <button class="ap-btn" onclick="audioSkip(1)" title="Next">⏭</button>
+    <div class="ap-title" id="ap-title">Select a track</div>
+    <div class="ap-time" id="ap-time">0:00 / 0:00</div>
+  </div>
+</div>
+<div class="ap-hidden-player" id="ap-hidden-player"></div>
 
 <div id="recent-section" class="section" style="display:none">
   <h2>Recently Played</h2>
@@ -595,6 +645,181 @@ function renderRecentlyPlayed() {
 
 renderRecentlyPlayed();
 loadThumbnails();
+
+// ── Audio Player Mode ──
+let audioPlayer = null;
+let audioVideoId = null;
+let viewMode = localStorage.getItem('view_mode') || 'thumbnails';
+document.getElementById('view-mode').value = viewMode;
+
+function setViewMode(mode) {
+  viewMode = mode;
+  localStorage.setItem('view_mode', mode);
+  if (mode === 'audio') {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('recent-section').style.display = 'none';
+    document.getElementById('playlist-view').style.display = '';
+    document.getElementById('audio-bar').classList.add('active');
+    renderPlaylist();
+  } else {
+    document.getElementById('app').style.display = '';
+    document.getElementById('playlist-view').style.display = 'none';
+    document.getElementById('audio-bar').classList.remove('active');
+    // Clean up audio player
+    if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
+    renderRecentlyPlayed();
+  }
+}
+
+function renderPlaylist() {
+  const el = document.getElementById('playlist-view');
+  let html = '';
+  let num = 0;
+  VIDEOS.forEach(section => {
+    html += `<div class="section"><h2>${section.section}</h2>`;
+    section.items.forEach(v => {
+      num++;
+      const prog = getProgress(v.id);
+      const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
+      const watched = pct > 90;
+      const active = audioVideoId === v.id ? ' active' : '';
+      const cached = sessionStorage.getItem(`oembed_${v.id}`);
+      const dur = cached ? JSON.parse(cached).duration : null;
+      const durStr = dur ? `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}` : '';
+      html += `<div class="playlist-item${active}" data-id="${v.id}" onclick="audioPlay('${v.id}','${v.title.replace(/'/g,"\\'")}')">
+        <span class="pi-num">${num}</span>
+        <span class="pi-title">${v.title}</span>
+        ${watched ? '<span class="pi-watched">✓</span>' : pct > 0 ? `<div class="pi-progress"><div class="pi-fill" style="width:${pct}%"></div></div>` : ''}
+        <span class="pi-dur">${durStr}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function audioPlay(videoId, title) {
+  audioVideoId = videoId;
+  addToRecentlyPlayed(videoId);
+  document.getElementById('ap-title').textContent = title;
+  document.getElementById('ap-play-btn').textContent = '⏸';
+
+  // Highlight active in playlist
+  document.querySelectorAll('.playlist-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === videoId);
+  });
+
+  // Destroy previous
+  if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
+
+  const container = document.getElementById('ap-hidden-player');
+  container.innerHTML = '<div id="ap-vimeo"></div>';
+
+  audioPlayer = new Vimeo.Player('ap-vimeo', {
+    id: parseInt(videoId),
+    width: 1,
+    height: 1,
+    muted: false,
+    quality: '360p'
+  });
+
+  audioPlayer.ready().then(() => {
+    return audioPlayer.setVolume(1);
+  }).then(() => {
+    const prog = getProgress(videoId);
+    if (prog && prog.position > 5 && (prog.position / prog.duration) < 0.95) {
+      return audioPlayer.setCurrentTime(prog.position);
+    }
+  }).then(() => {
+    return audioPlayer.play();
+  }).catch(() => {});
+
+  // Progress tracking
+  let lastSave = 0;
+  audioPlayer.on('timeupdate', function(data) {
+    // Update bar
+    const pct = data.duration > 0 ? (data.seconds / data.duration) * 100 : 0;
+    document.getElementById('ap-fill').style.width = pct + '%';
+    const cur = fmtTime(data.seconds);
+    const tot = fmtTime(data.duration);
+    document.getElementById('ap-time').textContent = `${cur} / ${tot}`;
+
+    // Save every 1s
+    const now = Date.now();
+    if (now - lastSave < 1000) return;
+    lastSave = now;
+    localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+      position: data.seconds, duration: data.duration, timestamp: Date.now()
+    }));
+    updateCardProgress(videoId, data.seconds, data.duration);
+  });
+
+  audioPlayer.on('pause', function() {
+    document.getElementById('ap-play-btn').textContent = '▶';
+    Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
+      localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+        position: pos, duration: dur, timestamp: Date.now()
+      }));
+    });
+  });
+
+  audioPlayer.on('play', function() {
+    document.getElementById('ap-play-btn').textContent = '⏸';
+  });
+
+  audioPlayer.on('ended', function() {
+    audioPlayer.getDuration().then(dur => {
+      localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+        position: dur, duration: dur, timestamp: Date.now()
+      }));
+      updateCardProgress(videoId, dur, dur);
+      renderPlaylist();
+    });
+    if (autoplayEnabled) audioSkip(1);
+  });
+}
+
+function audioTogglePlay() {
+  if (!audioPlayer) return;
+  audioPlayer.getPaused().then(paused => {
+    if (paused) audioPlayer.play();
+    else audioPlayer.pause();
+  });
+}
+
+function audioSeekRel(sec) {
+  if (!audioPlayer) return;
+  Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
+    audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec)));
+  });
+}
+
+function audioSkip(dir) {
+  if (!audioVideoId) { if (dir > 0) audioPlay(ALL_IDS[0], allVideosList[0].title); return; }
+  const idx = ALL_IDS.indexOf(audioVideoId);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= ALL_IDS.length) return;
+  const v = allVideosList[newIdx];
+  audioPlay(v.id, v.title);
+}
+
+function seekAudio(e) {
+  if (!audioPlayer) return;
+  const bar = document.getElementById('ap-progress');
+  const pct = e.offsetX / bar.offsetWidth;
+  audioPlayer.getDuration().then(dur => {
+    audioPlayer.setCurrentTime(dur * pct);
+  });
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = String(Math.floor(s % 60)).padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+// Init view mode
+if (viewMode === 'audio') setViewMode('audio');
 
 // Restore scroll position
 const savedScroll = localStorage.getItem('scroll_y');
