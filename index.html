@@ -189,6 +189,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   <label>Playback
     <div class="pill-toggle" id="view-mode">
       <button class="pill active" data-mode="thumbnails" onclick="setViewMode('thumbnails')">Video</button>
+      <button class="pill" data-mode="fullscreen" onclick="setViewMode('fullscreen')">Fullscreen</button>
       <button class="pill" data-mode="audio" onclick="setViewMode('audio')">Audio</button>
     </div>
   </label>
@@ -493,7 +494,7 @@ VIDEOS.forEach(section => {
       const prog = getProgress(v.id);
       const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
       const watched = pct > 90;
-      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', 'player')">
+      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="playFromGrid('${v.id}','${v.title.replace(/'/g,"\\'")}')">
         <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
         <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
         <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? `<span>${pct}%</span>` : ''}</div></div>
@@ -545,6 +546,16 @@ function applyOembed(data, thumb, id) {
 
 function getProgress(id) {
   try { return JSON.parse(localStorage.getItem(`progress_${id}`)); } catch { return null; }
+}
+
+function playFromGrid(videoId, title) {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  let mode;
+  if (isMobile) { mode = 'fullscreen'; }
+  else if (viewMode === 'fullscreen') { mode = 'fullscreen'; }
+  else if (viewMode === 'audio') { mode = 'audio'; }
+  else { mode = 'player'; }
+  openPlayer(videoId, title, mode);
 }
 
 function openPlayer(videoId, title, mode) {
@@ -698,7 +709,7 @@ function renderRecentlyPlayed() {
     const prog = getProgress(id);
     const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
     const watched = pct > 90;
-    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', 'player')">
+    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}" onclick="playFromGrid('${v.id}','${v.title.replace(/'/g,"\\'")}')">
       <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
       <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
       <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
