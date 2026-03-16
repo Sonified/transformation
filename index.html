@@ -754,8 +754,9 @@ function addToRecentlyPlayed(videoId) {
   renderRecentlyPlayed();
 }
 
-function renderRecentlyPlayed() {
-  const recent = getRecentlyPlayed();
+function renderRecentlyPlayed(limit) {
+  let recent = getRecentlyPlayed();
+  if (limit) recent = recent.slice(0, limit);
   const section = document.getElementById('recent-section');
   const row = document.getElementById('recent-row');
   if (!recent.length) { section.style.display = 'none'; return; }
@@ -832,10 +833,13 @@ function setViewMode(mode) {
   if (mode === 'audio') {
     if (currentPlayer) closePlayer();
     document.getElementById('app').style.display = 'none';
-    document.getElementById('recent-section').style.display = 'none';
     document.getElementById('playlist-view').style.display = '';
     document.getElementById('audio-bar').classList.add('active');
     renderPlaylist();
+    // Show recently played on mobile in audio mode
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) { renderRecentlyPlayed(5); }
+    else { document.getElementById('recent-section').style.display = 'none'; }
   } else {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
