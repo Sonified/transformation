@@ -152,6 +152,14 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .recent-row .card{min-width:220px;max-width:220px;flex-shrink:0}
 .recent-row .card.last-played{border:1.5px solid var(--accent);box-shadow:0 0 12px rgba(124,92,191,.25)}
 
+/* Mobile: horizontal scroll for all sections */
+@media (max-width: 768px) {
+  .grid{display:flex !important;grid-template-columns:none !important;gap:1rem;overflow-x:auto;padding-bottom:.5rem;-webkit-overflow-scrolling:touch}
+  .grid::-webkit-scrollbar{height:4px}
+  .grid::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+  .grid .card{min-width:220px;max-width:220px;flex-shrink:0}
+}
+
 /* Reset progress button */
 .reset-all{position:fixed;bottom:1rem;right:1rem;background:#333;color:var(--text-dim);border:none;padding:.4rem .8rem;border-radius:6px;font-size:.7rem;cursor:pointer;opacity:.4;transition:opacity .2s}
 .reset-all:hover{opacity:1;color:#fff}
@@ -998,7 +1006,7 @@ if (viewMode === 'audio') {
   }
 }
 
-// Restore scroll position
+// Restore scroll position (vertical)
 const savedScroll = localStorage.getItem('scroll_y');
 if (savedScroll) window.scrollTo(0, parseInt(savedScroll));
 let scrollTimer;
@@ -1006,6 +1014,18 @@ window.addEventListener('scroll', () => {
   clearTimeout(scrollTimer);
   scrollTimer = setTimeout(() => localStorage.setItem('scroll_y', window.scrollY), 200);
 }, {passive: true});
+
+// Horizontal scroll persistence for grids + recent row
+document.querySelectorAll('.grid, .recent-row').forEach((row, i) => {
+  const key = 'hscroll_' + i;
+  const saved = localStorage.getItem(key);
+  if (saved) row.scrollLeft = parseInt(saved);
+  let ht;
+  row.addEventListener('scroll', () => {
+    clearTimeout(ht);
+    ht = setTimeout(() => localStorage.setItem(key, row.scrollLeft), 200);
+  }, {passive: true});
+});
 </script>
 </body>
 </html>
