@@ -107,14 +107,14 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 /* Now Playing card */
 .now-playing{max-width:800px;margin:1rem auto;padding:0 1rem}
 @media (min-width: 769px) { .now-playing{display:none !important} .now-playing-card,.now-playing-card.active{display:none !important} }
-.now-playing-card{background:linear-gradient(135deg,#1c1c2e 0%,#151520 100%);border:1px solid #252535;border-radius:12px;padding:1.2rem;display:none}
+.now-playing-card{background:linear-gradient(135deg,#1c1c2e 0%,#151520 100%);border:1px solid #252535;border-radius:12px;padding:1.2rem;display:none;touch-action:none;-webkit-touch-callout:none}
 .now-playing-card.active{display:block}
 .now-playing-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem}
-.now-playing-title{font-size:1.1rem;font-weight:500;margin-bottom:.8rem;line-height:1.3}
-.now-playing-controls{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:.6rem}
+.now-playing-title{font-size:1.1rem;font-weight:500;margin-bottom:.4rem;line-height:1.3}
+.now-playing-controls{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:.4rem}
 .now-playing-progress{display:flex;align-items:center;gap:.6rem}
-.now-playing-progress .np-bar{flex:1;height:4px;background:var(--progress-bg);border-radius:2px;cursor:pointer;position:relative}
-.now-playing-progress .np-bar .np-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .2s}
+.now-playing-progress .np-bar{flex:1;height:6px;background:var(--progress-bg);border-radius:3px;cursor:pointer;position:relative}
+.now-playing-progress .np-bar .np-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .2s}
 .now-playing-progress .np-time{font-size:.7rem;color:var(--text-dim);min-width:36px}
 .np-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:.3rem;transition:opacity .15s;font-weight:600}
 .np-btn:hover{opacity:.7}
@@ -146,12 +146,16 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:1rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom))}
   .now-playing-card::after{content:'';display:block;position:absolute;left:0;right:0;top:100%;height:200px;background:#151520}
   .now-playing-card.active{display:block;position:relative}
+  .now-playing-label{margin-bottom:.2rem}
+  .now-playing-title{margin-bottom:.3rem}
   .playlist-container{padding-bottom:16rem}
   .np-btn.np-play{width:64px;height:64px;min-width:64px;min-height:64px}
   .np-btn.np-play svg{width:32px;height:32px}
   .np-btn.np-seek svg{width:36px;height:36px}
   .np-btn.np-skip svg{width:30px;height:30px}
   .now-playing-controls{gap:1rem}
+  .now-playing-progress .np-bar{height:8px;border-radius:4px}
+  .now-playing-progress .np-bar .np-fill{border-radius:4px}
 }
 
 /* Recently played */
@@ -221,7 +225,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <div id="playlist-view" style="display:none">
   <div class="now-playing">
     <div class="now-playing-card" id="now-playing-card">
-      <div id="np-player-container" style="width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:.6rem;display:none"></div>
+      <div id="np-player-container" style="width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:.6rem;display:none;position:relative"></div>
       <div class="now-playing-label">Now Playing</div>
       <div class="now-playing-title" id="np-title">Select a track</div>
       <div class="now-playing-controls">
@@ -233,7 +237,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
       </div>
       <div class="now-playing-progress">
         <span class="np-time" id="np-time-cur">0:00</span>
-        <div class="np-bar" onclick="seekAudioNP(event)"><div class="np-fill" id="np-fill"></div></div>
+        <div class="np-bar" onclick="seekAudioNP(event)" ontouchstart="seekAudioNP(event)"><div class="np-fill" id="np-fill"></div></div>
         <span class="np-time" id="np-time-dur">0:00</span>
       </div>
     </div>
@@ -855,13 +859,13 @@ function audioPlay(videoId, title) {
     width: isMobileAudio ? 640 : 1,
     height: isMobileAudio ? 360 : 1,
     responsive: isMobileAudio,
-    muted: false,
+    muted: isMobileAudio,
     quality: '360p'
   });
 
   // Keep play() as close to user gesture as possible — single .then() only
   audioPlayer.ready().then(() => {
-    audioPlayer.setVolume(1);
+    if (!isMobileAudio) audioPlayer.setVolume(1);
     audioPlayer.getDuration().then(dur => {
       buildTicks(dur);
     });
@@ -934,6 +938,8 @@ function audioTogglePlay() {
     if (v) audioPlay(v.id, v.title);
     return;
   }
+  // On mobile, unmute from this user gesture (iOS requires gesture to unmute)
+  audioPlayer.setVolume(1).catch(() => {});
   audioPlayer.getPaused().then(paused => {
     if (paused) audioPlayer.play();
     else audioPlayer.pause();
@@ -942,6 +948,7 @@ function audioTogglePlay() {
 
 function audioSeekRel(sec) {
   if (!audioPlayer) return;
+  audioPlayer.setVolume(1).catch(() => {});
   Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
     audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec)));
   });
@@ -958,9 +965,12 @@ function audioSkip(dir) {
 
 function seekAudioNP(e) {
   if (!audioPlayer) return;
+  audioPlayer.setVolume(1).catch(() => {});
   const bar = e.currentTarget;
   const rect = bar.getBoundingClientRect();
-  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  document.getElementById('np-fill').style.width = (pct * 100) + '%';
   audioPlayer.getDuration().then(dur => {
     audioPlayer.setCurrentTime(dur * pct);
   });
