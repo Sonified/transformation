@@ -86,9 +86,11 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .audio-player-bar .ap-main{display:flex;align-items:center;gap:.8rem;padding:.6rem 1rem}
 .audio-player-bar .ap-title{flex:1;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .audio-player-bar .ap-time{font-size:.75rem;color:var(--text-dim);min-width:90px;text-align:center}
-.ap-btn{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.3rem .5rem;border-radius:6px;transition:background .15s}
+.ap-btn{background:none;border:none;color:var(--text);font-size:.85rem;cursor:pointer;padding:.4rem .5rem;border-radius:6px;transition:background .15s;font-weight:600;letter-spacing:-.02em}
 .ap-btn:hover{background:rgba(255,255,255,.1)}
-.ap-btn.play-pause{font-size:1.6rem}
+.ap-btn.play-pause{width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1rem}
+.ap-btn.play-pause:hover{background:var(--accent-glow)}
+.ap-btn.skip{color:var(--text-dim);font-size:.75rem}
 .ap-progress{width:100%;height:4px;background:var(--progress-bg);cursor:pointer;position:relative;transition:height .15s;border-radius:12px 12px 0 0;overflow:visible}
 .ap-progress:hover{height:8px}
 .ap-progress .ap-fill{height:100%;background:var(--accent);pointer-events:none;transition:width .2s}
@@ -101,17 +103,44 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .ap-progress:hover .ap-hover-time{opacity:1}
 .ap-hidden-player{position:fixed;bottom:-500px;left:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
 
+/* Now Playing card */
+.now-playing{max-width:800px;margin:1rem auto;padding:0 1rem}
+.now-playing-card{background:linear-gradient(135deg,#1c1c2e 0%,#151520 100%);border:1px solid #252535;border-radius:12px;padding:1.2rem;display:none}
+.now-playing-card.active{display:block}
+.now-playing-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem}
+.now-playing-title{font-size:1.1rem;font-weight:500;margin-bottom:.8rem;line-height:1.3}
+.now-playing-controls{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:.6rem}
+.now-playing-progress{display:flex;align-items:center;gap:.6rem}
+.now-playing-progress .np-bar{flex:1;height:4px;background:var(--progress-bg);border-radius:2px;cursor:pointer;position:relative}
+.now-playing-progress .np-bar .np-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .2s}
+.now-playing-progress .np-time{font-size:.7rem;color:var(--text-dim);min-width:36px}
+.np-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:.3rem;transition:opacity .15s;font-weight:600}
+.np-btn:hover{opacity:.7}
+.np-btn.np-play{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.np-btn.np-play:hover{background:var(--accent-glow)}
+.np-btn.np-skip{color:var(--text-dim);font-size:.8rem}
+.np-btn.np-seek{color:var(--text-dim);font-size:.7rem}
+
 /* Playlist view */
-.playlist{max-width:800px;margin:0 auto;padding:0 1rem 6rem}
+.playlist-container{max-width:800px;margin:0 auto;padding:0 1rem}
 .playlist-item{display:flex;align-items:center;gap:.8rem;padding:.7rem .8rem;border-bottom:1px solid #1a1a2a;cursor:pointer;transition:background .15s;border-radius:6px}
 .playlist-item:hover{background:var(--card-hover)}
-.playlist-item.active{background:var(--card);border-color:var(--accent)}
+.playlist-item.active{background:var(--card);border-left:3px solid var(--accent)}
 .playlist-item .pi-num{color:var(--text-dim);font-size:.75rem;min-width:24px;text-align:center}
+.playlist-item.active .pi-num{color:var(--accent)}
 .playlist-item .pi-title{flex:1;font-size:.85rem}
+.playlist-item.active .pi-title{color:var(--accent-glow)}
 .playlist-item .pi-dur{color:var(--text-dim);font-size:.75rem}
 .playlist-item .pi-progress{width:40px;height:3px;background:var(--progress-bg);border-radius:2px;overflow:hidden}
 .playlist-item .pi-progress .pi-fill{height:100%;background:var(--accent)}
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
+
+/* Mobile: use now-playing card instead of bottom bar */
+@media (max-width: 768px) {
+  .audio-player-bar{display:none !important}
+  .now-playing-card.active{display:block}
+  .playlist-container{padding-bottom:1rem}
+}
 
 /* Recently played */
 .recent-row{display:flex;gap:1rem;overflow-x:auto;padding-bottom:.5rem;-webkit-overflow-scrolling:touch}
@@ -165,7 +194,27 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   </div>
 </div>
 
-<div id="playlist-view" style="display:none"></div>
+<div id="playlist-view" style="display:none">
+  <div class="now-playing">
+    <div class="now-playing-card" id="now-playing-card">
+      <div class="now-playing-label">Now Playing</div>
+      <div class="now-playing-title" id="np-title">Select a track</div>
+      <div class="now-playing-controls">
+        <button class="np-btn np-skip" onclick="audioSkip(-1)">Prev</button>
+        <button class="np-btn np-seek" onclick="audioSeekRel(-15)">−15s</button>
+        <button class="np-btn np-play" id="np-play-btn" onclick="audioTogglePlay()">▶</button>
+        <button class="np-btn np-seek" onclick="audioSeekRel(15)">+15s</button>
+        <button class="np-btn np-skip" onclick="audioSkip(1)">Next</button>
+      </div>
+      <div class="now-playing-progress">
+        <span class="np-time" id="np-time-cur">0:00</span>
+        <div class="np-bar" onclick="seekAudioNP(event)"><div class="np-fill" id="np-fill"></div></div>
+        <span class="np-time" id="np-time-dur">0:00</span>
+      </div>
+    </div>
+  </div>
+  <div class="playlist-container" id="playlist-container"></div>
+</div>
 
 <div class="audio-player-bar" id="audio-bar">
   <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)" onmousemove="showHoverTime(event)">
@@ -174,11 +223,11 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
     <div class="ap-hover-time" id="ap-hover-time">0:00</div>
   </div>
   <div class="ap-main">
-    <button class="ap-btn" onclick="audioSkip(-1)" title="Previous">⏮</button>
-    <button class="ap-btn" onclick="audioSeekRel(-15)" title="Back 15s">-15</button>
+    <button class="ap-btn skip" onclick="audioSkip(-1)" title="Previous">Prev</button>
+    <button class="ap-btn" onclick="audioSeekRel(-15)" title="Back 15s">−15s</button>
     <button class="ap-btn play-pause" id="ap-play-btn" onclick="audioTogglePlay()">▶</button>
-    <button class="ap-btn" onclick="audioSeekRel(15)" title="Forward 15s">+15</button>
-    <button class="ap-btn" onclick="audioSkip(1)" title="Next">⏭</button>
+    <button class="ap-btn" onclick="audioSeekRel(15)" title="Forward 15s">+15s</button>
+    <button class="ap-btn skip" onclick="audioSkip(1)" title="Next">Next</button>
     <div class="ap-title" id="ap-title">Select a track</div>
     <div class="ap-time" id="ap-time">0:00 / 0:00</div>
   </div>
@@ -680,7 +729,7 @@ function setViewMode(mode) {
 }
 
 function renderPlaylist() {
-  const el = document.getElementById('playlist-view');
+  const el = document.getElementById('playlist-container');
   let html = '';
   let num = 0;
   VIDEOS.forEach(section => {
@@ -711,6 +760,10 @@ function audioPlay(videoId, title) {
   addToRecentlyPlayed(videoId);
   document.getElementById('ap-title').textContent = title;
   document.getElementById('ap-play-btn').textContent = '⏸';
+  // Now Playing card
+  document.getElementById('np-title').textContent = title;
+  document.getElementById('np-play-btn').textContent = '⏸';
+  document.getElementById('now-playing-card').classList.add('active');
 
   // Highlight active in playlist
   document.querySelectorAll('.playlist-item').forEach(el => {
@@ -748,12 +801,15 @@ function audioPlay(videoId, title) {
   // Progress tracking
   let lastSave = 0;
   audioPlayer.on('timeupdate', function(data) {
-    // Update bar
+    // Update bars
     const pct = data.duration > 0 ? (data.seconds / data.duration) * 100 : 0;
     document.getElementById('ap-fill').style.width = pct + '%';
+    document.getElementById('np-fill').style.width = pct + '%';
     const cur = fmtTime(data.seconds);
     const tot = fmtTime(data.duration);
     document.getElementById('ap-time').textContent = `${cur} / ${tot}`;
+    document.getElementById('np-time-cur').textContent = cur;
+    document.getElementById('np-time-dur').textContent = tot;
 
     // Save every 1s
     const now = Date.now();
@@ -767,6 +823,7 @@ function audioPlay(videoId, title) {
 
   audioPlayer.on('pause', function() {
     document.getElementById('ap-play-btn').textContent = '▶';
+    document.getElementById('np-play-btn').textContent = '▶';
     Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
       localStorage.setItem(`progress_${videoId}`, JSON.stringify({
         position: pos, duration: dur, timestamp: Date.now()
@@ -776,6 +833,7 @@ function audioPlay(videoId, title) {
 
   audioPlayer.on('play', function() {
     document.getElementById('ap-play-btn').textContent = '⏸';
+    document.getElementById('np-play-btn').textContent = '⏸';
   });
 
   audioPlayer.on('ended', function() {
@@ -812,6 +870,16 @@ function audioSkip(dir) {
   if (newIdx < 0 || newIdx >= ALL_IDS.length) return;
   const v = allVideosList[newIdx];
   audioPlay(v.id, v.title);
+}
+
+function seekAudioNP(e) {
+  if (!audioPlayer) return;
+  const bar = e.currentTarget;
+  const rect = bar.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  audioPlayer.getDuration().then(dur => {
+    audioPlayer.setCurrentTime(dur * pct);
+  });
 }
 
 function seekAudio(e) {
@@ -901,11 +969,16 @@ if (viewMode === 'audio') {
       document.querySelectorAll('.playlist-item').forEach(el => {
         el.classList.toggle('active', el.dataset.id === lastId);
       });
+      document.getElementById('np-title').textContent = v.title;
+      document.getElementById('now-playing-card').classList.add('active');
       const prog = getProgress(lastId);
       if (prog) {
         const pct = (prog.position / prog.duration) * 100;
         document.getElementById('ap-fill').style.width = pct + '%';
+        document.getElementById('np-fill').style.width = pct + '%';
         document.getElementById('ap-time').textContent = `${fmtTime(prog.position)} / ${fmtTime(prog.duration)}`;
+        document.getElementById('np-time-cur').textContent = fmtTime(prog.position);
+        document.getElementById('np-time-dur').textContent = fmtTime(prog.duration);
         buildTicks(prog.duration);
       }
     }
