@@ -117,10 +117,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .now-playing-progress .np-time{font-size:.7rem;color:var(--text-dim);min-width:36px}
 .np-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:.3rem;transition:opacity .15s;font-weight:600}
 .np-btn:hover{opacity:.7}
-.np-btn.np-play{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.np-btn.np-play{width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
 .np-btn.np-play:hover{background:var(--accent-glow)}
-.np-btn.np-skip{color:var(--text-dim);font-size:.8rem}
-.np-btn.np-seek{color:var(--text-dim);font-size:.7rem}
+.np-btn.np-skip{color:var(--text-dim)}
+.np-btn.np-seek{color:var(--text-dim)}
 
 /* Playlist view */
 .playlist-container{max-width:800px;margin:0 auto;padding:0 1rem}
@@ -201,11 +201,11 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
       <div class="now-playing-label">Now Playing</div>
       <div class="now-playing-title" id="np-title">Select a track</div>
       <div class="now-playing-controls">
-        <button class="np-btn np-skip" onclick="audioSkip(-1)">Prev</button>
-        <button class="np-btn np-seek" onclick="audioSeekRel(-15)">−15s</button>
-        <button class="np-btn np-play" id="np-play-btn" onclick="audioTogglePlay()">▶</button>
-        <button class="np-btn np-seek" onclick="audioSeekRel(15)">+15s</button>
-        <button class="np-btn np-skip" onclick="audioSkip(1)">Next</button>
+        <button class="np-btn np-skip" onclick="audioSkip(-1)" title="Previous"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+        <button class="np-btn np-seek" onclick="audioSeekRel(-15)" title="Back 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
+        <button class="np-btn np-play" id="np-play-btn" onclick="audioTogglePlay()"><svg id="np-play-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg></button>
+        <button class="np-btn np-seek" onclick="audioSeekRel(15)" title="Forward 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
+        <button class="np-btn np-skip" onclick="audioSkip(1)" title="Next"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
       </div>
       <div class="now-playing-progress">
         <span class="np-time" id="np-time-cur">0:00</span>
@@ -764,7 +764,7 @@ function audioPlay(videoId, title) {
   document.getElementById('ap-play-btn').textContent = '⏸';
   // Now Playing card
   document.getElementById('np-title').textContent = title;
-  document.getElementById('np-play-btn').textContent = '⏸';
+  document.getElementById('np-play-icon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
   document.getElementById('now-playing-card').classList.add('active');
 
   // Highlight active in playlist
@@ -825,7 +825,7 @@ function audioPlay(videoId, title) {
 
   audioPlayer.on('pause', function() {
     document.getElementById('ap-play-btn').textContent = '▶';
-    document.getElementById('np-play-btn').textContent = '▶';
+    document.getElementById('np-play-icon').innerHTML = '<polygon points="5,3 19,12 5,21"/>';
     Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
       localStorage.setItem(`progress_${videoId}`, JSON.stringify({
         position: pos, duration: dur, timestamp: Date.now()
@@ -835,7 +835,7 @@ function audioPlay(videoId, title) {
 
   audioPlayer.on('play', function() {
     document.getElementById('ap-play-btn').textContent = '⏸';
-    document.getElementById('np-play-btn').textContent = '⏸';
+    document.getElementById('np-play-icon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
   });
 
   audioPlayer.on('ended', function() {
