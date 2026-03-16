@@ -438,23 +438,21 @@ VIDEOS.forEach(section => {
 function loadThumbnails() {
   const allVideos = VIDEOS.flatMap(s => s.items);
   allVideos.forEach(v => {
-    const card = document.querySelector(`.card[data-id="${v.id}"]`);
-    if (!card) return;
-    const thumb = card.querySelector('.thumb');
-    // Check cache
+    const cards = document.querySelectorAll(`.card[data-id="${v.id}"]`);
+    if (!cards.length) return;
     const cached = sessionStorage.getItem(`oembed_${v.id}`);
     if (cached) {
-      applyOembed(JSON.parse(cached), thumb, v.id);
+      cards.forEach(card => applyOembed(JSON.parse(cached), card.querySelector('.thumb'), v.id));
       return;
     }
     fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${v.id}`)
       .then(r => r.json())
       .then(data => {
         sessionStorage.setItem(`oembed_${v.id}`, JSON.stringify(data));
-        applyOembed(data, thumb, v.id);
+        cards.forEach(card => applyOembed(data, card.querySelector('.thumb'), v.id));
       })
       .catch(() => {
-        thumb.querySelector('.placeholder').textContent = 'No preview';
+        cards.forEach(card => { const p = card.querySelector('.placeholder'); if (p) p.textContent = 'No preview'; });
       });
   });
 }
@@ -577,13 +575,13 @@ function openPlayer(videoId, title, mode) {
 }
 
 function updateCardProgress(videoId, position, duration) {
-  const card = document.querySelector(`.card[data-id="${videoId}"]`);
-  if (!card) return;
+  const cards = document.querySelectorAll(`.card[data-id="${videoId}"]`);
   const pct = Math.round((position / duration) * 100);
-  card.querySelector('.fill').style.width = pct + '%';
-  if (pct > 90) {
-    card.classList.add('is-watched');
-  }
+  cards.forEach(card => {
+    const fill = card.querySelector('.fill');
+    if (fill) fill.style.width = pct + '%';
+    if (pct > 90) card.classList.add('is-watched');
+  });
 }
 
 function closePlayer() {
