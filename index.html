@@ -111,7 +111,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .now-playing-card.active{display:block}
 .now-playing-info{margin-bottom:.5rem}
 .now-playing-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem}
-.now-playing-title{font-size:1.1rem;font-weight:500;margin-bottom:.4rem;line-height:1.3}
+.now-playing-title{font-size:1.1rem;font-weight:500;margin-bottom:.4rem;line-height:1.3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.now-playing-title .scroll-inner{display:inline-block;white-space:nowrap}
+.now-playing-title .scroll-inner.scrolling{animation:npScroll var(--scroll-dur,6s) 3s ease-in-out infinite}
+@keyframes npScroll{0%,10%{transform:translateX(0)}40%,60%{transform:translateX(var(--scroll-dist,0))}90%,100%{transform:translateX(0)}}
 .now-playing-controls{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:.4rem;margin-top:.2rem}
 .now-playing-progress{display:flex;align-items:center;gap:.6rem}
 .now-playing-progress .np-bar{flex:1;height:6px;background:var(--progress-bg);border-radius:3px;cursor:pointer;position:relative}
@@ -142,12 +145,13 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .pi-eq{display:none;align-items:flex-end;gap:2px;height:14px}
 .playlist-item.active .pi-eq{display:flex}
 .pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px}
-.playlist-item.active.playing .pi-eq span{animation:eqBounce .6s ease-in-out infinite alternate}
+.playlist-item.active.playing .pi-eq span:nth-child(1){animation:eq1 .43s steps(4,jump-none) infinite}
+.playlist-item.active.playing .pi-eq span:nth-child(2){animation:eq2 .55s steps(5,jump-none) infinite}
+.playlist-item.active.playing .pi-eq span:nth-child(3){animation:eq3 .35s steps(3,jump-none) infinite}
 .playlist-item.active:not(.playing) .pi-eq span{height:3px !important}
-.pi-eq span:nth-child(1){animation-delay:0s;height:6px}
-.pi-eq span:nth-child(2){animation-delay:.2s;height:10px}
-.pi-eq span:nth-child(3){animation-delay:.4s;height:4px}
-@keyframes eqBounce{0%{height:3px}100%{height:14px}}
+@keyframes eq1{0%{height:3px}25%{height:12px}50%{height:5px}75%{height:14px}100%{height:3px}}
+@keyframes eq2{0%{height:10px}20%{height:3px}40%{height:14px}60%{height:6px}80%{height:11px}100%{height:10px}}
+@keyframes eq3{0%{height:7px}33%{height:14px}66%{height:3px}100%{height:7px}}
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
@@ -157,7 +161,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   .now-playing-card::after{content:'';display:block;position:absolute;left:0;right:0;top:100%;height:200px;background:#151520}
   .now-playing-card.active{display:block;position:relative}
   .now-playing-label{margin-bottom:0;display:inline;font-size:.6rem}
-  .now-playing-title{margin-bottom:0;display:inline;font-size:.95rem}
+  .now-playing-title{margin-bottom:0;display:block;font-size:.95rem;text-overflow:ellipsis}
   .now-playing-info{margin-bottom:.8rem}
   .playlist-container{padding-bottom:16rem}
   .np-btn.np-play{width:64px;height:64px;min-width:64px;min-height:64px}
@@ -238,7 +242,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
     <div class="now-playing-card" id="now-playing-card">
       <div id="np-player-container" style="width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:.6rem;display:none;position:relative"></div>
       <div class="now-playing-info">
-        <span class="now-playing-label">Now Playing:</span> <span class="now-playing-title" id="np-title">Select a track</span>
+        <span class="now-playing-label">Now Playing:</span> <span class="now-playing-title" id="np-title"><span class="scroll-inner">Select a track</span></span>
       </div>
       <div class="now-playing-controls">
         <button class="np-btn np-skip" onclick="audioSkip(-1)" title="Previous"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
@@ -883,13 +887,32 @@ function renderPlaylist() {
   el.innerHTML = html;
 }
 
+function setNpTitle(title) {
+  const el = document.getElementById('np-title');
+  const inner = el.querySelector('.scroll-inner') || el;
+  inner.textContent = title;
+  inner.classList.remove('scrolling');
+  inner.style.removeProperty('--scroll-dist');
+  inner.style.removeProperty('--scroll-dur');
+  // After render, check if text overflows and start scroll
+  requestAnimationFrame(() => {
+    const overflow = inner.scrollWidth - el.clientWidth;
+    if (overflow > 5) {
+      inner.style.setProperty('--scroll-dist', -overflow + 'px');
+      // Speed: ~50px/sec, min 3s, max 10s
+      inner.style.setProperty('--scroll-dur', Math.min(10, Math.max(3, overflow / 50)) + 's');
+      inner.classList.add('scrolling');
+    }
+  });
+}
+
 function audioPlay(videoId, title) {
   audioVideoId = videoId;
   addToRecentlyPlayed(videoId);
   document.getElementById('ap-title').textContent = title;
   document.getElementById('ap-play-btn').textContent = '⏸';
   // Now Playing card
-  document.getElementById('np-title').textContent = title;
+  setNpTitle(title);
   document.querySelector('#np-play-icon .icon-play').style.display='none';document.querySelector('#np-play-icon .icon-pause').style.display='';
   document.getElementById('now-playing-card').classList.add('active');
 
@@ -1191,7 +1214,7 @@ if (viewMode === 'audio') {
       document.querySelectorAll('.playlist-item').forEach(el => {
         el.classList.toggle('active', el.dataset.id === lastId);
       });
-      document.getElementById('np-title').textContent = v.title;
+      setNpTitle(v.title);
       document.getElementById('now-playing-card').classList.add('active');
       const prog = getProgress(lastId);
       if (prog) {
