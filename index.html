@@ -852,8 +852,9 @@ function buildTicks(duration) {
     const label = document.createElement('div');
     label.className = 'ap-tick-label';
     label.style.left = pct + '%';
-    const mins = Math.floor(t / 60);
-    label.textContent = isHour ? `${mins / 60}h` : `${mins}m`;
+    const hrs = Math.floor(t / 3600);
+    const mins = Math.floor((t % 3600) / 60);
+    label.textContent = isHour ? `${hrs}h` : (hrs > 0 ? `${hrs}h${mins}m` : `${mins}m`);
     container.appendChild(label);
   }
 }
