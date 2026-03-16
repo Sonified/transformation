@@ -791,6 +791,7 @@ function renderRecentlyPlayed(limit) {
       <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
     </div>`;
   }).join('');
+  loadThumbnails();
 }
 
 renderRecentlyPlayed();
