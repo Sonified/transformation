@@ -35,7 +35,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .card .thumb .placeholder{color:var(--text-dim);font-size:.8rem}
 .card .info{padding:.8rem 1rem}
 .card .info h3{font-size:.85rem;font-weight:500;line-height:1.3;margin-bottom:.4rem}
-.card .info .meta{font-size:.75rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem}
+.card .info .meta{font-size:.85rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem}
 .card .progress-bar{height:12px;background:var(--progress-bg);position:relative;transition:height .15s;cursor:pointer}
 .card:hover .progress-bar{height:16px}
 .card .progress-bar .fill{height:100%;background:var(--accent);transition:width .3s;pointer-events:none}
@@ -541,11 +541,12 @@ function applyOembed(data, thumb, id) {
   const placeholder = thumb.querySelector('.placeholder');
   if (placeholder) placeholder.remove();
   thumb.prepend(img);
-  const dur = document.querySelector(`.duration[data-id="${id}"]`);
-  if (dur && data.duration) {
+  if (data.duration) {
     const m = Math.floor(data.duration / 60);
     const s = String(data.duration % 60).padStart(2, '0');
-    dur.textContent = `${m}:${s}`;
+    document.querySelectorAll(`.duration[data-id="${id}"]`).forEach(dur => {
+      dur.textContent = `${m}:${s}`;
+    });
   }
 }
 
