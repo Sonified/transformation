@@ -109,9 +109,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 @media (min-width: 769px) { .now-playing{display:none !important} .now-playing-card,.now-playing-card.active{display:none !important} }
 .now-playing-card{background:linear-gradient(135deg,#1c1c2e 0%,#151520 100%);border:1px solid #252535;border-radius:12px;padding:1.2rem;display:none;touch-action:none;-webkit-touch-callout:none}
 .now-playing-card.active{display:block}
+.now-playing-info{margin-bottom:.5rem}
 .now-playing-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem}
 .now-playing-title{font-size:1.1rem;font-weight:500;margin-bottom:.4rem;line-height:1.3}
-.now-playing-controls{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:.4rem}
+.now-playing-controls{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:.4rem;margin-top:.2rem}
 .now-playing-progress{display:flex;align-items:center;gap:.6rem}
 .now-playing-progress .np-bar{flex:1;height:6px;background:var(--progress-bg);border-radius:3px;cursor:pointer;position:relative}
 .now-playing-progress .np-bar .np-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .2s}
@@ -143,11 +144,12 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 @media (max-width: 768px) {
   .audio-player-bar{display:none !important}
   .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:0}
-  .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:1rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom))}
+  .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom))}
   .now-playing-card::after{content:'';display:block;position:absolute;left:0;right:0;top:100%;height:200px;background:#151520}
   .now-playing-card.active{display:block;position:relative}
-  .now-playing-label{margin-bottom:.2rem}
-  .now-playing-title{margin-bottom:.3rem}
+  .now-playing-label{margin-bottom:0;display:inline;font-size:.6rem}
+  .now-playing-title{margin-bottom:0;display:inline;font-size:.95rem}
+  .now-playing-info{margin-bottom:.8rem}
   .playlist-container{padding-bottom:16rem}
   .np-btn.np-play{width:64px;height:64px;min-width:64px;min-height:64px}
   .np-btn.np-play svg{width:32px;height:32px}
@@ -226,8 +228,9 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   <div class="now-playing">
     <div class="now-playing-card" id="now-playing-card">
       <div id="np-player-container" style="width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:.6rem;display:none;position:relative"></div>
-      <div class="now-playing-label">Now Playing</div>
-      <div class="now-playing-title" id="np-title">Select a track</div>
+      <div class="now-playing-info">
+        <span class="now-playing-label">Now Playing:</span> <span class="now-playing-title" id="np-title">Select a track</span>
+      </div>
       <div class="now-playing-controls">
         <button class="np-btn np-skip" onclick="audioSkip(-1)" title="Previous"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
         <button class="np-btn np-seek" onclick="audioSeekRel(-15)" title="Back 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
