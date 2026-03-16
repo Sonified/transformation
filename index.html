@@ -850,9 +850,10 @@ function audioPlay(videoId, title) {
   const isMobileAudio = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const npContainer = document.getElementById('np-player-container');
   const container = isMobileAudio ? npContainer : document.getElementById('ap-hidden-player');
+  // Show container BEFORE creating player so iOS sees a visible video element
+  if (isMobileAudio) npContainer.style.display = 'block';
   container.innerHTML = '<div id="ap-vimeo"></div>';
-  // On mobile, show the video in the now-playing card so iOS allows audio
-  npContainer.style.display = isMobileAudio ? 'block' : 'none';
+  if (!isMobileAudio) npContainer.style.display = 'none';
 
   const prog = getProgress(videoId);
   const seekTo = (prog && prog.position > 5 && (prog.position / prog.duration) < 0.95) ? prog.position : null;
@@ -862,13 +863,14 @@ function audioPlay(videoId, title) {
     width: isMobileAudio ? 640 : 1,
     height: isMobileAudio ? 360 : 1,
     responsive: isMobileAudio,
-    muted: isMobileAudio,
+    muted: false,
+    autoplay: true,
     quality: '360p'
   });
 
-  // Keep play() as close to user gesture as possible — single .then() only
+  // User tapped a track — this IS the gesture. Keep play() direct.
   audioPlayer.ready().then(() => {
-    if (!isMobileAudio) audioPlayer.setVolume(1);
+    audioPlayer.setVolume(1);
     audioPlayer.getDuration().then(dur => {
       buildTicks(dur);
     });
