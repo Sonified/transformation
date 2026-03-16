@@ -98,6 +98,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .ap-progress .ap-tick{position:absolute;bottom:0;width:1px;background:rgba(255,255,255,.25)}
 .ap-progress .ap-tick.hour{background:rgba(255,255,255,.6);width:2px}
 .ap-progress .ap-tick-label{position:absolute;bottom:100%;transform:translateX(-50%);font-size:.6rem;color:var(--text-dim);white-space:nowrap}
+.ap-progress .ap-playhead{position:absolute;top:50%;width:14px;height:14px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 4px rgba(0,0,0,.5);opacity:0;transition:opacity .15s;pointer-events:none;z-index:2}
+.ap-progress:hover .ap-playhead,.ap-progress.dragging .ap-playhead{opacity:1}
 .ap-progress .ap-hover-time{position:absolute;bottom:100%;transform:translateX(-50%);background:#222;color:#fff;font-size:.7rem;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;margin-bottom:4px}
 .ap-progress:hover .ap-hover-time{opacity:1}
 .ap-hidden-player{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.01;pointer-events:none}
@@ -240,8 +242,9 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 </div>
 
 <div class="audio-player-bar" id="audio-bar">
-  <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)" onmousemove="showHoverTime(event)">
+  <div class="ap-progress" id="ap-progress" onmousemove="showHoverTime(event)">
     <div class="ap-fill" id="ap-fill"></div>
+    <div class="ap-playhead" id="ap-playhead"></div>
     <div class="ap-ticks" id="ap-ticks"></div>
     <div class="ap-hover-time" id="ap-hover-time">0:00</div>
   </div>
@@ -874,7 +877,10 @@ function audioPlay(videoId, title) {
   audioPlayer.on('timeupdate', function(data) {
     // Update bars
     const pct = data.duration > 0 ? (data.seconds / data.duration) * 100 : 0;
-    document.getElementById('ap-fill').style.width = pct + '%';
+    if (!apDragging) {
+      document.getElementById('ap-fill').style.width = pct + '%';
+      document.getElementById('ap-playhead').style.left = pct + '%';
+    }
     document.getElementById('np-fill').style.width = pct + '%';
     const cur = fmtTime(data.seconds);
     const tot = fmtTime(data.duration);
@@ -960,17 +966,73 @@ function seekAudioNP(e) {
   });
 }
 
-function seekAudio(e) {
-  if (!audioPlayer) return;
-  const bar = document.getElementById('ap-progress');
-  const rect = bar.getBoundingClientRect();
-  const pct = (e.clientX - rect.left) / rect.width;
-  audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * Math.max(0, Math.min(1, pct)));
-  });
-}
-
 let currentAudioDuration = 0;
+let apDragging = false;
+
+// Desktop audio bar: drag-to-seek with playhead, seek on release
+(function() {
+  const bar = document.getElementById('ap-progress');
+  const fill = document.getElementById('ap-fill');
+  const playhead = document.getElementById('ap-playhead');
+
+  function pct(e) {
+    const rect = bar.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  }
+
+  function visualUpdate(p) {
+    fill.style.width = (p * 100) + '%';
+    playhead.style.left = (p * 100) + '%';
+  }
+
+  function ensurePlayerAndSeek(p) {
+    if (audioPlayer) {
+      // Player exists — get duration and seek
+      audioPlayer.getDuration().then(dur => {
+        audioPlayer.setCurrentTime(dur * p);
+      });
+    } else if (audioVideoId && currentAudioDuration) {
+      // Player not started yet but we have a track loaded in the UI — start it
+      const v = allVideosList.find(x => x.id === audioVideoId);
+      if (v) {
+        // Save the desired position so audioPlay picks it up
+        localStorage.setItem(`progress_${audioVideoId}`, JSON.stringify({
+          position: currentAudioDuration * p, duration: currentAudioDuration, timestamp: Date.now()
+        }));
+        audioPlay(v.id, v.title);
+      }
+    } else {
+      // Nothing loaded — start last played or first track, then seek
+      const recent = getRecentlyPlayed();
+      const id = recent.length ? recent[0] : ALL_IDS[0];
+      const v = allVideosList.find(x => x.id === id);
+      if (v) audioPlay(v.id, v.title);
+    }
+  }
+
+  bar.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    apDragging = true;
+    bar.classList.add('dragging');
+    fill.style.transition = 'none';
+    visualUpdate(pct(e));
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!apDragging) return;
+    visualUpdate(pct(e));
+  });
+
+  document.addEventListener('mouseup', function(e) {
+    if (!apDragging) return;
+    apDragging = false;
+    bar.classList.remove('dragging');
+    fill.style.transition = '';
+    const p = pct(e);
+    visualUpdate(p);
+    ensurePlayerAndSeek(p);
+  });
+})();
 
 function showHoverTime(e) {
   if (!currentAudioDuration) return;
@@ -1053,6 +1115,7 @@ if (viewMode === 'audio') {
       if (prog) {
         const pct = (prog.position / prog.duration) * 100;
         document.getElementById('ap-fill').style.width = pct + '%';
+        document.getElementById('ap-playhead').style.left = pct + '%';
         document.getElementById('np-fill').style.width = pct + '%';
         document.getElementById('ap-time').textContent = `${fmtTime(prog.position)} / ${fmtTime(prog.duration)}`;
         document.getElementById('np-time-cur').textContent = fmtTime(prog.position);
