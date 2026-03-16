@@ -1113,8 +1113,8 @@ async function audioSeekRel(sec) {
   audioPlayer.setVolume(1).catch(() => {});
   try {
     const [pos, dur] = await Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]);
-    await audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec)));
-    await audioPlayer.play();
+    audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec))).catch(() => {});
+    audioPlayer.play().catch(() => {});
   } catch (err) {}
 }
 
@@ -1154,8 +1154,8 @@ async function seekAudioNPClick(e) {
   audioPlayer.setVolume(1).catch(() => {});
   try {
     const dur = await audioPlayer.getDuration();
-    await audioPlayer.setCurrentTime(dur * pct);
-    await audioPlayer.play();
+    audioPlayer.setCurrentTime(dur * pct).catch(() => {});
+    audioPlayer.play().catch(() => {});
   } catch (err) {}
 }
 
@@ -1174,8 +1174,8 @@ async function seekAudioNPEnd(e) {
   audioPlayer.setVolume(1).catch(() => {});
   try {
     const dur = await audioPlayer.getDuration();
-    await audioPlayer.setCurrentTime(dur * p);
-    await audioPlayer.play();
+    audioPlayer.setCurrentTime(dur * p).catch(() => {});
+    audioPlayer.play().catch(() => {});
   } catch (err) {}
 }
 
