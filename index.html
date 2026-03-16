@@ -727,11 +727,13 @@ function setViewMode(mode) {
     document.getElementById('recent-section').style.display = 'none';
     document.getElementById('playlist-view').style.display = '';
     document.getElementById('audio-bar').classList.add('active');
+    document.getElementById('playback-mode').style.display = 'none';
     renderPlaylist();
   } else {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
     document.getElementById('audio-bar').classList.remove('active');
+    document.getElementById('playback-mode').style.display = '';
     // Clean up audio player
     if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
     renderRecentlyPlayed();
