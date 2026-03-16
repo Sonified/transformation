@@ -494,10 +494,9 @@ function openPlayer(videoId, title, mode) {
   // Default mode: mobile=fullscreen, desktop=player
   if (!mode) mode = isMobileDevice ? 'fullscreen' : 'player';
   document.getElementById('modal-title').textContent = title;
-  if (mode !== 'fullscreen') {
-    document.getElementById('modal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
+  // Always show modal — player needs a visible container to render
+  document.getElementById('modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
 
   const container = document.getElementById('player-container');
   container.innerHTML = '';
@@ -522,36 +521,32 @@ function openPlayer(videoId, title, mode) {
     const seekFirst = prog && prog.position > 5 && (prog.position / prog.duration) < 0.95;
     if (seekFirst) return player.setCurrentTime(prog.position);
   }).then(() => {
-    if (mode === 'fullscreen') {
-      return player.requestFullscreen().catch(() => {});
-    } else if (mode === 'audio') {
-      // Audio-only: play but hide the modal video area visually
+    if (mode === 'audio') {
       document.querySelector('.modal .player-wrap').style.paddingTop = '0';
       document.querySelector('.modal .player-wrap').style.height = '60px';
       return player.play();
     } else {
-      return player.play();
+      return player.play().then(() => {
+        if (mode === 'fullscreen') {
+          return player.requestFullscreen().catch(() => {});
+        }
+      });
     }
   }).catch(() => {});
 
-  // When exiting fullscreen, clean up (no modal to dismiss)
-  if (mode === 'fullscreen') {
-    player.on('fullscreenchange', function(data) {
-      if (!data.fullscreen) {
-        Promise.all([player.getCurrentTime(), player.getDuration()]).then(([pos, dur]) => {
-          localStorage.setItem(`progress_${videoId}`, JSON.stringify({
-            position: pos, duration: dur, timestamp: Date.now()
-          }));
-          updateCardProgress(videoId, pos, dur);
-        }).finally(() => {
-          player.destroy();
-          currentPlayer = null;
-          currentVideoId = null;
-          document.getElementById('player-container').innerHTML = '';
-        });
-      }
-    });
-  }
+  // When exiting fullscreen, close modal and clean up
+  player.on('fullscreenchange', function(data) {
+    if (!data.fullscreen && mode === 'fullscreen') {
+      Promise.all([player.getCurrentTime(), player.getDuration()]).then(([pos, dur]) => {
+        localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+          position: pos, duration: dur, timestamp: Date.now()
+        }));
+        updateCardProgress(videoId, pos, dur);
+      }).finally(() => {
+        closePlayer();
+      });
+    }
+  });
 
   function saveProgress(seconds, duration) {
     localStorage.setItem(`progress_${videoId}`, JSON.stringify({
