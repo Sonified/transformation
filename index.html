@@ -86,8 +86,16 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .ap-btn{background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:.3rem .5rem;border-radius:6px;transition:background .15s}
 .ap-btn:hover{background:rgba(255,255,255,.1)}
 .ap-btn.play-pause{font-size:1.6rem}
-.ap-progress{width:100%;height:4px;background:var(--progress-bg);cursor:pointer;position:relative}
+.ap-progress{width:100%;height:4px;background:var(--progress-bg);cursor:pointer;position:relative;transition:height .15s}
+.ap-progress:hover{height:10px}
 .ap-progress .ap-fill{height:100%;background:var(--accent);pointer-events:none;transition:width .2s}
+.ap-progress .ap-ticks{position:absolute;bottom:100%;left:0;right:0;height:28px;pointer-events:none;opacity:0;transition:opacity .15s}
+.ap-progress:hover .ap-ticks{opacity:1}
+.ap-progress .ap-tick{position:absolute;bottom:0;width:1px;background:rgba(255,255,255,.25)}
+.ap-progress .ap-tick.hour{background:rgba(255,255,255,.6);width:2px}
+.ap-progress .ap-tick-label{position:absolute;bottom:100%;transform:translateX(-50%);font-size:.6rem;color:var(--text-dim);white-space:nowrap}
+.ap-progress .ap-hover-time{position:absolute;bottom:100%;transform:translateX(-50%);background:#222;color:#fff;font-size:.7rem;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;margin-bottom:4px}
+.ap-progress:hover .ap-hover-time{opacity:1}
 .ap-hidden-player{position:fixed;bottom:-500px;left:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
 
 /* Playlist view */
@@ -160,8 +168,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <div id="playlist-view" style="display:none"></div>
 
 <div class="audio-player-bar" id="audio-bar">
-  <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)">
+  <div class="ap-progress" id="ap-progress" onclick="seekAudio(event)" onmousemove="showHoverTime(event)" style="padding:8px 0;margin:-8px 0;box-sizing:content-box">
     <div class="ap-fill" id="ap-fill"></div>
+    <div class="ap-ticks" id="ap-ticks"></div>
+    <div class="ap-hover-time" id="ap-hover-time">0:00</div>
   </div>
   <div class="ap-main">
     <button class="ap-btn" onclick="audioSkip(-1)" title="Previous">⏮</button>
@@ -724,6 +734,9 @@ function audioPlay(videoId, title) {
   audioPlayer.ready().then(() => {
     return audioPlayer.setVolume(1);
   }).then(() => {
+    return audioPlayer.getDuration();
+  }).then(dur => {
+    buildTicks(dur);
     const prog = getProgress(videoId);
     if (prog && prog.position > 5 && (prog.position / prog.duration) < 0.95) {
       return audioPlayer.setCurrentTime(prog.position);
@@ -804,10 +817,50 @@ function audioSkip(dir) {
 function seekAudio(e) {
   if (!audioPlayer) return;
   const bar = document.getElementById('ap-progress');
-  const pct = e.offsetX / bar.offsetWidth;
+  const rect = bar.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
   audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * pct);
+    audioPlayer.setCurrentTime(dur * Math.max(0, Math.min(1, pct)));
   });
+}
+
+let currentAudioDuration = 0;
+
+function showHoverTime(e) {
+  if (!currentAudioDuration) return;
+  const bar = document.getElementById('ap-progress');
+  const rect = bar.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const time = currentAudioDuration * pct;
+  const el = document.getElementById('ap-hover-time');
+  el.textContent = fmtTime(time);
+  el.style.left = (pct * 100) + '%';
+}
+
+function buildTicks(duration) {
+  currentAudioDuration = duration;
+  const container = document.getElementById('ap-ticks');
+  container.innerHTML = '';
+  if (!duration || duration < 60) return;
+  // 10-minute ticks
+  const tenMin = 600;
+  const hourSec = 3600;
+  for (let t = tenMin; t < duration; t += tenMin) {
+    const pct = (t / duration) * 100;
+    const isHour = t % hourSec === 0;
+    const tick = document.createElement('div');
+    tick.className = 'ap-tick' + (isHour ? ' hour' : '');
+    tick.style.left = pct + '%';
+    tick.style.height = isHour ? '16px' : '8px';
+    container.appendChild(tick);
+    // Label every 10 min
+    const label = document.createElement('div');
+    label.className = 'ap-tick-label';
+    label.style.left = pct + '%';
+    const mins = Math.floor(t / 60);
+    label.textContent = isHour ? `${mins / 60}h` : `${mins}m`;
+    container.appendChild(label);
+  }
 }
 
 function fmtTime(s) {
@@ -815,6 +868,22 @@ function fmtTime(s) {
   const sec = String(Math.floor(s % 60)).padStart(2, '0');
   return `${m}:${sec}`;
 }
+
+// Keyboard shortcuts for audio player
+document.addEventListener('keydown', function(e) {
+  if (viewMode !== 'audio' || !audioPlayer) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    audioTogglePlay();
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    audioSeekRel(-15);
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    audioSeekRel(15);
+  }
+});
 
 // Init view mode
 if (viewMode === 'audio') setViewMode('audio');
