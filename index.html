@@ -887,7 +887,30 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Init view mode
-if (viewMode === 'audio') setViewMode('audio');
+if (viewMode === 'audio') {
+  setViewMode('audio');
+  // Resume last played track
+  const recent = getRecentlyPlayed();
+  if (recent.length) {
+    const lastId = recent[0];
+    const v = allVideosList.find(x => x.id === lastId);
+    if (v) {
+      // Set up the UI without autoplaying
+      audioVideoId = lastId;
+      document.getElementById('ap-title').textContent = v.title;
+      document.querySelectorAll('.playlist-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.id === lastId);
+      });
+      const prog = getProgress(lastId);
+      if (prog) {
+        const pct = (prog.position / prog.duration) * 100;
+        document.getElementById('ap-fill').style.width = pct + '%';
+        document.getElementById('ap-time').textContent = `${fmtTime(prog.position)} / ${fmtTime(prog.duration)}`;
+        buildTicks(prog.duration);
+      }
+    }
+  }
+}
 
 // Restore scroll position
 const savedScroll = localStorage.getItem('scroll_y');
