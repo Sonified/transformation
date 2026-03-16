@@ -127,11 +127,6 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .np-btn.np-skip{color:var(--text-dim)}
 .np-btn.np-seek{color:var(--text-dim)}
 
-/* Audio recent played chips */
-.ap-recent-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .7rem;background:#1c1c2e;border:1px solid #252535;border-radius:20px;cursor:pointer;transition:background .15s,border-color .15s;font-size:.8rem;color:var(--text-main);max-width:240px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.ap-recent-chip:hover{background:#252540;border-color:var(--accent)}
-.ap-recent-chip.now-playing-chip{border-color:var(--accent);background:rgba(124,92,191,.15)}
-.ap-recent-chip .chip-pct{font-size:.65rem;color:var(--text-dim);margin-left:.2rem}
 /* Playlist view */
 .playlist-container{max-width:800px;margin:0 auto;padding:0 1rem}
 .playlist-container .section{padding:0 0 1rem}
@@ -156,7 +151,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   .audio-player-bar{display:none !important}
   .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:0}
   .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom))}
-  .now-playing-card::after{content:'';display:block;position:absolute;left:0;right:0;top:100%;height:200px;background:#151520}
+  .now-playing-card::after{content:'';display:block;position:absolute;left:0;right:0;top:100%;height:100vh;background:#151520;pointer-events:auto}
   .now-playing-card.active{display:block;position:relative}
   .now-playing-info{display:flex;align-items:baseline;gap:.4rem;margin-bottom:.8rem;overflow:hidden}
   .now-playing-label{margin-bottom:0;font-size:.6rem;flex-shrink:0}
@@ -257,8 +252,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
     </div>
   </div>
   <div id="ap-recent-section" class="playlist-container" style="display:none">
-    <h2 style="font-size:1rem;margin:1rem 0 .5rem;color:var(--text-dim)">Recently Played</h2>
-    <div id="ap-recent-row" style="display:flex;gap:.5rem;flex-wrap:wrap"></div>
+    <h2 style="font-size:.85rem;margin:1rem 0 .5rem;color:var(--text-dim)">Continue</h2>
+    <div id="ap-recent-row"></div>
   </div>
   <div class="playlist-container" id="playlist-container"></div>
 </div>
@@ -788,21 +783,23 @@ renderRecentlyPlayed();
 loadThumbnails();
 
 function renderApRecent() {
-  const recent = getRecentlyPlayed().slice(0, 5);
+  const recent = getRecentlyPlayed();
   const section = document.getElementById('ap-recent-section');
   const row = document.getElementById('ap-recent-row');
   if (!recent.length) { section.style.display = 'none'; return; }
+  const id = recent[0];
+  const v = allVideosList.find(x => x.id === id);
+  if (!v) { section.style.display = 'none'; return; }
   section.style.display = '';
-  row.innerHTML = recent.map(id => {
-    const v = allVideosList.find(x => x.id === id);
-    if (!v) return '';
-    const prog = getProgress(id);
-    const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
-    const playing = id === audioVideoId;
-    return `<div class="ap-recent-chip${playing ? ' now-playing-chip' : ''}" onclick="audioPlay('${v.id}','${v.title.replace(/'/g,"\\'")}')">
-      ${playing ? '♫ ' : ''}${v.title}${pct > 0 && pct < 95 ? '<span class="chip-pct">'+pct+'%</span>' : ''}
-    </div>`;
-  }).join('');
+  const prog = getProgress(id);
+  const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
+  const watched = pct > 90;
+  const playing = id === audioVideoId;
+  row.innerHTML = `<div class="playlist-item active${playing ? ' playing' : ''}" style="border:1px solid var(--accent);background:rgba(124,92,191,.1)" onclick="audioPlay('${v.id}','${v.title.replace(/'/g,"\\'")}')">
+    <span class="pi-eq"><span></span><span></span><span></span></span>
+    <span class="pi-title">${v.title}</span>
+    ${watched ? '<span class="pi-watched">✓</span>' : pct > 0 ? `<div class="pi-progress"><div class="pi-fill" style="width:${pct}%"></div></div>` : ''}
+  </div>`;
 }
 
 // ── Audio Player Mode ──
@@ -870,10 +867,8 @@ function setViewMode(mode) {
     document.getElementById('playlist-view').style.display = '';
     document.getElementById('audio-bar').classList.add('active');
     renderPlaylist();
-    // Show recently played on mobile in audio mode
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) { renderRecentlyPlayed(5); document.getElementById('ap-recent-section').style.display = 'none'; }
-    else { document.getElementById('recent-section').style.display = 'none'; renderApRecent(); }
+    document.getElementById('recent-section').style.display = 'none';
+    renderApRecent();
   } else {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
@@ -952,7 +947,7 @@ function setNpTitle(title) {
 function audioPlay(videoId, title) {
   audioVideoId = videoId;
   addToRecentlyPlayed(videoId);
-  if (window.innerWidth > 768) renderApRecent();
+  renderApRecent();
   document.getElementById('ap-title').textContent = title;
   document.getElementById('ap-play-btn').textContent = '⏸';
   // Now Playing card
