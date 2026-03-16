@@ -618,18 +618,24 @@ function openPlayer(videoId, title, mode) {
 
   currentPlayer = player;
 
+  // Fullscreen: request immediately from user gesture context
+  if (mode === 'fullscreen') {
+    const modalEl = document.querySelector('.modal');
+    const fsEl = modalEl.requestFullscreen ? modalEl
+      : document.getElementById('player-container');
+    if (fsEl.requestFullscreen) fsEl.requestFullscreen().catch(() => {});
+    else if (fsEl.webkitRequestFullscreen) fsEl.webkitRequestFullscreen();
+    else if (fsEl.webkitEnterFullscreen) fsEl.webkitEnterFullscreen();
+  }
+
   player.ready().then(() => {
     if (startTime > 0) player.setCurrentTime(startTime);
     if (mode === 'audio') {
       document.querySelector('.modal .player-wrap').style.paddingTop = '0';
       document.querySelector('.modal .player-wrap').style.height = '60px';
     } else if (mode === 'fullscreen') {
-      // On mobile, playsinline:false handles native fullscreen automatically.
-      // On desktop, we need to request it via JS.
-      const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (!isMob) {
-        player.play().then(() => player.requestFullscreen()).catch(() => {});
-      }
+      // Fallback: try Vimeo's own fullscreen after ready
+      player.requestFullscreen().catch(() => {});
     }
   }).catch(() => {});
 
