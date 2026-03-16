@@ -414,7 +414,8 @@ function openPlayer(videoId, title) {
   const player = new Vimeo.Player('vimeo-player', {
     id: parseInt(videoId),
     width: 960,
-    responsive: true
+    responsive: true,
+    muted: false
   });
 
   currentPlayer = player;
@@ -422,6 +423,8 @@ function openPlayer(videoId, title) {
   // Resume position then play — keeping it in the user gesture chain for mobile
   const prog = getProgress(videoId);
   player.ready().then(() => {
+    return player.setVolume(1);
+  }).then(() => {
     const seekFirst = prog && prog.position > 5 && (prog.position / prog.duration) < 0.95;
     const chain = seekFirst ? player.setCurrentTime(prog.position) : Promise.resolve();
     return chain.then(() => player.play());
