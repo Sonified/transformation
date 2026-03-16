@@ -1108,16 +1108,14 @@ function npBarPct(e, bar) {
 function seekAudioNP(e) {
   if (!audioPlayer) return;
   e.preventDefault();
-  audioPlayer.setVolume(1).catch(() => {});
   npDragBar = e.currentTarget;
   npDragPct = npBarPct(e, npDragBar);
   document.getElementById('np-fill').style.width = (npDragPct * 100) + '%';
-  // For click (non-drag), seek immediately
-  audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * npDragPct).then(() => {
-      audioPlayer.play().catch(() => {});
-    }).catch(() => {});
-  });
+  // Touch: just start drag, seek on end. Click: seek now.
+  if (!e.touches) {
+    audioPlayer.setVolume(1).catch(() => {});
+    audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * npDragPct)).catch(() => {});
+  }
 }
 
 function seekAudioNPMove(e) {
@@ -1132,11 +1130,8 @@ function seekAudioNPEnd(e) {
   const p = e.changedTouches ? npBarPct(e, npDragBar) : npDragPct;
   npDragBar = null;
   document.getElementById('np-fill').style.width = (p * 100) + '%';
-  audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * p).then(() => {
-      audioPlayer.play().catch(() => {});
-    }).catch(() => {});
-  });
+  audioPlayer.setVolume(1).catch(() => {});
+  audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * p)).catch(() => {});
 }
 
 let currentAudioDuration = 0;
