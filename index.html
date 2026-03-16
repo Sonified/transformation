@@ -100,7 +100,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .ap-hidden-player{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.01;pointer-events:none}
 
 /* Now Playing card */
-.now-playing{max-width:800px;margin:1rem auto;padding:0 1rem}
+.now-playing{max-width:800px;margin:1rem auto;padding:0 1rem;display:none}
+@media (max-width: 768px) { .now-playing{display:block} }
 .now-playing-card{background:linear-gradient(135deg,#1c1c2e 0%,#151520 100%);border:1px solid #252535;border-radius:12px;padding:1.2rem;display:none}
 .now-playing-card.active{display:block}
 .now-playing-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:.5rem}
