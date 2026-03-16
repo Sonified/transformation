@@ -778,8 +778,6 @@ function renderRecentlyPlayed(limit) {
 renderRecentlyPlayed();
 loadThumbnails();
 
-function renderApRecent() {}
-
 // ── Audio Player Mode ──
 let audioPlayer = null;
 let audioVideoId = null;
@@ -846,7 +844,6 @@ function setViewMode(mode) {
     document.getElementById('audio-bar').classList.add('active');
     renderPlaylist();
     document.getElementById('recent-section').style.display = 'none';
-    renderApRecent();
   } else {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
@@ -943,7 +940,7 @@ function setNpTitle(title) {
 function audioPlay(videoId, title) {
   audioVideoId = videoId;
   addToRecentlyPlayed(videoId);
-  renderApRecent();
+  renderPlaylist();
   document.getElementById('ap-title').textContent = title;
   document.getElementById('ap-play-btn').textContent = '⏸';
   // Now Playing card
