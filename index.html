@@ -726,6 +726,7 @@ function setViewMode(mode) {
     // Clean up audio player
     if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
     renderRecentlyPlayed();
+    loadThumbnails();
   }
 }
 
