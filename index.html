@@ -1076,8 +1076,8 @@ function audioTogglePlay() {
 
 async function audioSeekRel(sec) {
   if (!audioPlayer) return;
+  audioPlayer.setVolume(1).catch(() => {});
   try {
-    await audioPlayer.setVolume(1);
     const [pos, dur] = await Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]);
     await audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec)));
     await audioPlayer.play();
@@ -1117,8 +1117,8 @@ async function seekAudioNPClick(e) {
   const rect = bar.getBoundingClientRect();
   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   document.getElementById('np-fill').style.width = (pct * 100) + '%';
+  audioPlayer.setVolume(1).catch(() => {});
   try {
-    await audioPlayer.setVolume(1);
     const dur = await audioPlayer.getDuration();
     await audioPlayer.setCurrentTime(dur * pct);
     await audioPlayer.play();
@@ -1137,8 +1137,8 @@ async function seekAudioNPEnd(e) {
   const p = e.changedTouches ? npBarPct(e, npDragBar) : npDragPct;
   npDragBar = null;
   document.getElementById('np-fill').style.width = (p * 100) + '%';
+  audioPlayer.setVolume(1).catch(() => {});
   try {
-    await audioPlayer.setVolume(1);
     const dur = await audioPlayer.getDuration();
     await audioPlayer.setCurrentTime(dur * p);
     await audioPlayer.play();
