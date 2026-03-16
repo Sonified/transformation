@@ -878,7 +878,7 @@ function setViewMode(mode) {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
     document.getElementById('audio-bar').classList.remove('active');
-    if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
+    if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; stopEq(); }
     audioVideoId = null;
     renderRecentlyPlayed();
     loadThumbnails();
@@ -968,7 +968,7 @@ function audioPlay(videoId, title) {
   });
 
   // Destroy previous
-  if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
+  if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; stopEq(); }
 
   const isMobileAudio = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const npContainer = document.getElementById('np-player-container');
@@ -1051,6 +1051,7 @@ function audioPlay(videoId, title) {
   });
 
   audioPlayer.on('ended', function() {
+    stopEq();
     audioPlayer.getDuration().then(dur => {
       localStorage.setItem(`progress_${videoId}`, JSON.stringify({
         position: dur, duration: dur, timestamp: Date.now()
