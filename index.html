@@ -245,7 +245,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
       </div>
       <div class="now-playing-progress">
         <span class="np-time" id="np-time-cur">0:00</span>
-        <div class="np-bar" onclick="seekAudioNP(event)" ontouchstart="seekAudioNP(event)" ontouchmove="seekAudioNPMove(event)" ontouchend="seekAudioNPEnd(event)"><div class="np-fill" id="np-fill"></div></div>
+        <div class="np-bar" onclick="seekAudioNPClick(event)" ontouchstart="seekAudioNP(event)" ontouchmove="seekAudioNPMove(event)" ontouchend="seekAudioNPEnd(event)"><div class="np-fill" id="np-fill"></div></div>
         <span class="np-time" id="np-time-dur">0:00</span>
       </div>
     </div>
@@ -1103,11 +1103,19 @@ function seekAudioNP(e) {
   npDragBar = e.currentTarget;
   npDragPct = npBarPct(e, npDragBar);
   document.getElementById('np-fill').style.width = (npDragPct * 100) + '%';
-  // Touch: just start drag, seek on end. Click: seek now.
-  if (!e.touches) {
-    audioPlayer.setVolume(1).catch(() => {});
-    audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * npDragPct)).catch(() => {});
-  }
+}
+
+function seekAudioNPClick(e) {
+  // Mouse click only — touch is handled by touchstart/end
+  if (!audioPlayer) return;
+  const bar = e.currentTarget;
+  const rect = bar.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  document.getElementById('np-fill').style.width = (pct * 100) + '%';
+  audioPlayer.setVolume(1).catch(() => {});
+  audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * pct).then(() => {
+    audioPlayer.play().catch(() => {});
+  })).catch(() => {});
 }
 
 function seekAudioNPMove(e) {
