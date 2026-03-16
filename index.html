@@ -244,9 +244,9 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
       </div>
       <div class="now-playing-controls">
         <button class="np-btn np-skip" onclick="audioSkip(-1)" title="Previous"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-        <button class="np-btn np-seek" onclick="audioSeekRel(-15)" title="Back 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
+        <button class="np-btn np-seek" onclick="audioSeekRel(-10)" title="Back 10s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">10</text></svg></button>
         <button class="np-btn np-play" id="np-play-btn" onclick="audioTogglePlay()"><svg id="np-play-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon class="icon-play" points="5,3 19,12 5,21"/><g class="icon-pause" style="display:none"><rect x="5" y="3" width="5" height="18"/><rect x="14" y="3" width="5" height="18"/></g></svg></button>
-        <button class="np-btn np-seek" onclick="audioSeekRel(15)" title="Forward 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
+        <button class="np-btn np-seek" onclick="audioSeekRel(10)" title="Forward 10s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">10</text></svg></button>
         <button class="np-btn np-skip" onclick="audioSkip(1)" title="Next"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
       </div>
       <div class="now-playing-progress">
@@ -268,9 +268,9 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   </div>
   <div class="ap-main">
     <button class="ap-btn skip" onclick="audioSkip(-1)" title="Previous">Prev</button>
-    <button class="ap-btn" onclick="audioSeekRel(-15)" title="Back 15s">−15s</button>
+    <button class="ap-btn" onclick="audioSeekRel(-10)" title="Back 10s">−10s</button>
     <button class="ap-btn play-pause" id="ap-play-btn" onclick="audioTogglePlay()">▶</button>
-    <button class="ap-btn" onclick="audioSeekRel(15)" title="Forward 15s">+15s</button>
+    <button class="ap-btn" onclick="audioSeekRel(10)" title="Forward 10s">+10s</button>
     <button class="ap-btn skip" onclick="audioSkip(1)" title="Next">Next</button>
     <div class="ap-title" id="ap-title">Select a track</div>
     <div class="ap-time" id="ap-time">0:00 / 0:00</div>
@@ -996,8 +996,8 @@ function audioPlay(videoId, title) {
     navigator.mediaSession.setActionHandler('pause', () => audioPlayer && audioPlayer.pause());
     navigator.mediaSession.setActionHandler('previoustrack', () => audioSkip(-1));
     navigator.mediaSession.setActionHandler('nexttrack', () => audioSkip(1));
-    navigator.mediaSession.setActionHandler('seekbackward', () => audioSeekRel(-15));
-    navigator.mediaSession.setActionHandler('seekforward', () => audioSeekRel(15));
+    navigator.mediaSession.setActionHandler('seekbackward', () => audioSeekRel(-10));
+    navigator.mediaSession.setActionHandler('seekforward', () => audioSeekRel(10));
   }
 
   // User tapped a track — this IS the gesture. Keep play() direct.
@@ -1291,10 +1291,10 @@ document.addEventListener('keydown', function(e) {
     if (audioPlayer) audioTogglePlay();
   } else if (e.code === 'ArrowLeft') {
     e.preventDefault();
-    audioSeekRel(-15);
+    audioSeekRel(-10);
   } else if (e.code === 'ArrowRight') {
     e.preventDefault();
-    audioSeekRel(15);
+    audioSeekRel(10);
   }
 });
 
