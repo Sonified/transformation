@@ -612,7 +612,8 @@ function openPlayer(videoId, title, mode) {
     width: 960,
     responsive: true,
     muted: false,
-    autoplay: true
+    autoplay: true,
+    playsinline: mode !== 'fullscreen'
   });
 
   currentPlayer = player;
@@ -983,6 +984,7 @@ function audioPlay(videoId, title) {
     responsive: isMobileAudio,
     muted: false,
     autoplay: true,
+    playsinline: true,
     quality: '360p'
   });
 
