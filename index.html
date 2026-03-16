@@ -427,12 +427,19 @@ function openPlayer(videoId, title) {
 
   // Resume position then play — keeping it in the user gesture chain for mobile
   const prog = getProgress(videoId);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   player.ready().then(() => {
     return player.setVolume(1);
   }).then(() => {
     const seekFirst = prog && prog.position > 5 && (prog.position / prog.duration) < 0.95;
     const chain = seekFirst ? player.setCurrentTime(prog.position) : Promise.resolve();
     return chain.then(() => player.play());
+  }).then(() => {
+    // On mobile, go straight to fullscreen
+    if (isMobile) {
+      player.requestFullscreen().catch(() => {});
+    }
   }).catch(() => {
     // Mobile may still block — player will show native play button as fallback
   });
