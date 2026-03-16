@@ -36,9 +36,11 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .card .info{padding:.8rem 1rem}
 .card .info h3{font-size:.85rem;font-weight:500;line-height:1.3;margin-bottom:.4rem}
 .card .info .meta{font-size:.75rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem}
-.card .progress-bar{height:6px;background:var(--progress-bg);position:relative;transition:height .15s}
+.card .progress-bar{height:6px;background:var(--progress-bg);position:relative;transition:height .15s;cursor:pointer}
 .card:hover .progress-bar{height:10px}
-.card .progress-bar .fill{height:100%;background:var(--accent);transition:width .3s}
+.card .progress-bar .fill{height:100%;background:var(--accent);transition:width .3s;pointer-events:none}
+.card .progress-bar .playhead{position:absolute;top:50%;right:0;width:14px;height:14px;background:#fff;border-radius:50%;transform:translate(50%,-50%);box-shadow:0 0 4px rgba(0,0,0,.5);opacity:0;transition:opacity .15s;pointer-events:none}
+.card:hover .progress-bar .playhead{opacity:1}
 .card .watched-badge{position:absolute;top:8px;right:8px;background:var(--watched);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;display:none;z-index:2}
 .card.is-watched .watched-badge{display:flex}
 .card.is-watched .thumb img{opacity:.7}
@@ -497,7 +499,7 @@ VIDEOS.forEach(section => {
       const watched = pct > 90;
       return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="playFromGrid('${v.id}','${v.title.replace(/'/g,"\\'")}')">
         <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
-        <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="progress-bar" data-id="${v.id}"><div class="fill" style="width:${pct}%"></div><div class="playhead" style="left:${pct}%"></div></div>
         <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? `<span>${pct}%</span>` : ''}</div></div>
       </div>`;
     }).join('')
@@ -656,9 +658,50 @@ function updateCardProgress(videoId, position, duration) {
   cards.forEach(card => {
     const fill = card.querySelector('.fill');
     if (fill) fill.style.width = pct + '%';
+    const ph = card.querySelector('.playhead');
+    if (ph) ph.style.left = pct + '%';
     if (pct > 90) card.classList.add('is-watched');
   });
 }
+
+// Progress bar drag-to-seek on desktop
+(function() {
+  let dragging = null; // {bar, videoId, duration}
+  function pctFromEvent(bar, e) {
+    const rect = bar.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  }
+  document.addEventListener('mousedown', function(e) {
+    const bar = e.target.closest('.progress-bar[data-id]');
+    if (!bar) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = bar.dataset.id;
+    const prog = getProgress(id);
+    if (!prog) return;
+    dragging = {bar, videoId: id, duration: prog.duration};
+    const pct = pctFromEvent(bar, e);
+    bar.querySelector('.fill').style.width = (pct * 100) + '%';
+    bar.querySelector('.playhead').style.left = (pct * 100) + '%';
+    bar.querySelector('.fill').style.transition = 'none';
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    const pct = pctFromEvent(dragging.bar, e);
+    dragging.bar.querySelector('.fill').style.width = (pct * 100) + '%';
+    dragging.bar.querySelector('.playhead').style.left = (pct * 100) + '%';
+  });
+  document.addEventListener('mouseup', function(e) {
+    if (!dragging) return;
+    const pct = pctFromEvent(dragging.bar, e);
+    const pos = pct * dragging.duration;
+    dragging.bar.querySelector('.fill').style.transition = '';
+    localStorage.setItem(`progress_${dragging.videoId}`, JSON.stringify({
+      position: pos, duration: dragging.duration, timestamp: Date.now()
+    }));
+    dragging = null;
+  });
+})();
 
 function closePlayer() {
   document.getElementById('modal').classList.remove('active');
@@ -712,7 +755,7 @@ function renderRecentlyPlayed() {
     const watched = pct > 90;
     return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}" onclick="playFromGrid('${v.id}','${v.title.replace(/'/g,"\\'")}')">
       <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
-      <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="progress-bar" data-id="${v.id}"><div class="fill" style="width:${pct}%"></div><div class="playhead" style="left:${pct}%"></div></div>
       <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
     </div>`;
   }).join('');
