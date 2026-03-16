@@ -963,11 +963,11 @@ function fmtTime(s) {
 
 // Keyboard shortcuts for audio player
 document.addEventListener('keydown', function(e) {
-  if (viewMode !== 'audio' || !audioPlayer) return;
+  if (viewMode !== 'audio') return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') {
     e.preventDefault();
-    audioTogglePlay();
+    if (audioPlayer) audioTogglePlay();
   } else if (e.code === 'ArrowLeft') {
     e.preventDefault();
     audioSeekRel(-15);
