@@ -172,7 +172,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 </div>
 
 <header>
-<h1>Transformation</h1>
+<h1>Transformation 🦋</h1>
 <p>Dr. Joe Dispenza — Progressive Online Workshop</p>
 </header>
 
@@ -653,7 +653,13 @@ function closePlayer() {
 document.getElementById('modal').addEventListener('click', function(e) {
   if (e.target === this) closePlayer();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayer(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePlayer();
+  if (e.key === 'Enter' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+    const recent = getRecentlyPlayed();
+    if (recent.length) { e.preventDefault(); playVideo(recent[0]); }
+  }
+});
 
 // Recently played
 const allVideosList = VIDEOS.flatMap(s => s.items);
