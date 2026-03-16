@@ -62,7 +62,8 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .modal .modal-header button:hover{color:#fff}
 
 /* Controls bar */
-.controls{max-width:1200px;margin:0 auto;padding:.8rem 1rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.controls{max-width:1200px;margin:0 auto;padding:.8rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.controls-left,.controls-right{display:flex;align-items:center;gap:1.5rem}
 .controls label{font-size:.8rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem;cursor:pointer}
 .controls select{background:#1a1a2a;color:var(--text);border:1px solid #333;border-radius:6px;padding:.3rem .5rem;font-size:.8rem;cursor:pointer}
 .controls select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
@@ -177,28 +178,30 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 </header>
 
 <div class="controls">
-  <label>
-    Sleep Timer
-    <select id="sleep-timer" onchange="setSleepTimer(this.value)">
-      <option value="0">Off</option>
-      <option value="15">15 min</option>
-      <option value="30">30 min</option>
-      <option value="45">45 min</option>
-      <option value="60">60 min</option>
-    </select>
-    <span id="sleep-status"></span>
-  </label>
-  <label>
-    Autoplay
-    <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
-  </label>
-  <div class="pill-toggle" id="playback-mode">
-    <button class="pill active" data-mode="player" onclick="setPlaybackMode('player')">▶ Player</button>
-    <button class="pill" data-mode="fullscreen" onclick="setPlaybackMode('fullscreen')">⛶ Full Screen</button>
+  <div class="controls-left">
+    <label>Playback
+      <div class="pill-toggle" id="view-mode">
+        <button class="pill active" data-mode="thumbnails" onclick="setViewMode('thumbnails')">Video</button>
+        <button class="pill" data-mode="audio" onclick="setViewMode('audio')">Audio</button>
+      </div>
+    </label>
+    <label>
+      Autoplay
+      <div class="toggle" id="autoplay-toggle" onclick="toggleAutoplay()"></div>
+    </label>
   </div>
-  <div class="pill-toggle" id="view-mode">
-    <button class="pill active" data-mode="thumbnails" onclick="setViewMode('thumbnails')">Thumbnails</button>
-    <button class="pill" data-mode="audio" onclick="setViewMode('audio')">Audio Player</button>
+  <div class="controls-right">
+    <label>
+      Sleep Timer
+      <select id="sleep-timer" onchange="setSleepTimer(this.value)">
+        <option value="0">Off</option>
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+        <option value="45">45 min</option>
+        <option value="60">60 min</option>
+      </select>
+      <span id="sleep-status"></span>
+    </label>
   </div>
 </div>
 
@@ -408,20 +411,6 @@ let currentVideoId = null;
 // Flat list of all video IDs in order for autoplay
 const ALL_IDS = VIDEOS.flatMap(s => s.items.map(v => v.id));
 
-// Playback mode
-let playbackMode = localStorage.getItem('playback_mode') || 'player';
-document.querySelectorAll('#playback-mode .pill').forEach(p => {
-  p.classList.toggle('active', p.dataset.mode === playbackMode);
-});
-
-function setPlaybackMode(mode) {
-  playbackMode = mode;
-  localStorage.setItem('playback_mode', mode);
-  document.querySelectorAll('#playback-mode .pill').forEach(p => {
-    p.classList.toggle('active', p.dataset.mode === mode);
-  });
-}
-
 // Autoplay
 let autoplayEnabled = JSON.parse(localStorage.getItem('autoplay') || 'false');
 const autoplayToggle = document.getElementById('autoplay-toggle');
@@ -499,7 +488,7 @@ VIDEOS.forEach(section => {
       const prog = getProgress(v.id);
       const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
       const watched = pct > 90;
-      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', playbackMode)">
+      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', 'player')">
         <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
         <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
         <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? `<span>${pct}%</span>` : ''}</div></div>
@@ -697,7 +686,7 @@ function renderRecentlyPlayed() {
     const prog = getProgress(id);
     const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
     const watched = pct > 90;
-    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', playbackMode)">
+    return `<div class="card ${watched ? 'is-watched' : ''}${idx === 0 ? ' last-played' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}', 'player')">
       <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
       <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
       <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
@@ -727,13 +716,11 @@ function setViewMode(mode) {
     document.getElementById('recent-section').style.display = 'none';
     document.getElementById('playlist-view').style.display = '';
     document.getElementById('audio-bar').classList.add('active');
-    document.getElementById('playback-mode').style.display = 'none';
     renderPlaylist();
   } else {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
     document.getElementById('audio-bar').classList.remove('active');
-    document.getElementById('playback-mode').style.display = '';
     // Clean up audio player
     if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
     renderRecentlyPlayed();
