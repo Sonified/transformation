@@ -433,16 +433,16 @@ function openPlayer(videoId, title) {
     return player.setVolume(1);
   }).then(() => {
     const seekFirst = prog && prog.position > 5 && (prog.position / prog.duration) < 0.95;
-    const chain = seekFirst ? player.setCurrentTime(prog.position) : Promise.resolve();
-    return chain.then(() => player.play());
+    if (seekFirst) return player.setCurrentTime(prog.position);
   }).then(() => {
-    // On mobile, go straight to fullscreen
     if (isMobile) {
-      player.requestFullscreen().catch(() => {});
+      // On mobile: go fullscreen, let native controls handle play
+      return player.requestFullscreen().catch(() => {});
+    } else {
+      // On desktop: autoplay in modal
+      return player.play();
     }
-  }).catch(() => {
-    // Mobile may still block — player will show native play button as fallback
-  });
+  }).catch(() => {});
 
   function saveProgress(seconds, duration) {
     localStorage.setItem(`progress_${videoId}`, JSON.stringify({
