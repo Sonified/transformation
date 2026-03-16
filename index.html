@@ -216,29 +216,32 @@ function openPlayer(videoId, title) {
     player.ready().then(() => player.setCurrentTime(prog.position));
   }
 
-  // Save progress every 5s
+  function saveProgress(seconds, duration) {
+    localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+      position: seconds,
+      duration: duration,
+      timestamp: Date.now()
+    }));
+    updateCardProgress(videoId, seconds, duration);
+  }
+
+  // Save progress every 1s
   let lastSave = 0;
   player.on('timeupdate', function(data) {
     const now = Date.now();
-    if (now - lastSave < 5000) return;
+    if (now - lastSave < 1000) return;
     lastSave = now;
-    localStorage.setItem(`progress_${videoId}`, JSON.stringify({
-      position: data.seconds,
-      duration: data.duration,
-      timestamp: now
-    }));
-    updateCardProgress(videoId, data.seconds, data.duration);
+    saveProgress(data.seconds, data.duration);
+  });
+
+  player.on('pause', function() {
+    Promise.all([player.getCurrentTime(), player.getDuration()]).then(([pos, dur]) => {
+      saveProgress(pos, dur);
+    });
   });
 
   player.on('ended', function() {
-    player.getDuration().then(dur => {
-      localStorage.setItem(`progress_${videoId}`, JSON.stringify({
-        position: dur,
-        duration: dur,
-        timestamp: Date.now()
-      }));
-      updateCardProgress(videoId, dur, dur);
-    });
+    player.getDuration().then(dur => saveProgress(dur, dur));
   });
 }
 
