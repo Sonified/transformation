@@ -136,11 +136,15 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-item .pi-progress .pi-fill{height:100%;background:var(--accent)}
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
 
-/* Mobile: use now-playing card instead of bottom bar */
+/* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
   .audio-player-bar{display:none !important}
+  .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:.5rem}
+  .now-playing-card{border-radius:12px 12px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5)}
   .now-playing-card.active{display:block}
-  .playlist-container{padding-bottom:1rem}
+  .playlist-container{padding-bottom:14rem}
+  .np-btn.np-play{width:64px;height:64px}
+  .np-btn.np-play svg{width:32px;height:32px}
 }
 
 /* Recently played */
@@ -851,7 +855,14 @@ function audioPlay(videoId, title) {
 }
 
 function audioTogglePlay() {
-  if (!audioPlayer) return;
+  if (!audioPlayer) {
+    // No player yet — start the last played or first track
+    const recent = getRecentlyPlayed();
+    const id = recent.length ? recent[0] : ALL_IDS[0];
+    const v = allVideosList.find(x => x.id === id);
+    if (v) audioPlay(v.id, v.title);
+    return;
+  }
   audioPlayer.getPaused().then(paused => {
     if (paused) audioPlayer.play();
     else audioPlayer.pause();
