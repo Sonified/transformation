@@ -41,16 +41,24 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .card.is-watched .watched-badge{display:flex}
 .card.is-watched .thumb img{opacity:.7}
 
+/* Card hover overlay */
+.card .hover-actions{position:absolute;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;gap:.8rem;z-index:3}
+.card:hover .hover-actions{display:flex}
+.hover-actions button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:.5rem .8rem;border-radius:8px;font-size:.75rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:background .15s}
+.hover-actions button:hover{background:rgba(255,255,255,.3)}
+.hover-actions button svg{width:16px;height:16px;fill:currentColor}
+
 /* Modal */
-.modal-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;height:100dvh;background:#000;z-index:1000;display:none;flex-direction:column;padding:0}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:2rem}
 .modal-overlay.active{display:flex}
-.modal{width:100%;height:100%;background:#000;display:flex;flex-direction:column}
-.modal .player-wrap{flex:1;position:relative;min-height:0}
+.modal{width:100%;max-width:900px;background:#1a1a2a;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal .player-wrap{position:relative;padding-top:56.25%}
 .modal .player-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-width: 900px) {
   .modal .modal-header{display:none}
   .modal-overlay.active{padding:0}
-  .modal{border-radius:0}
+  .modal{border-radius:0;max-width:100%;height:100%}
+  .modal .player-wrap{padding-top:0;height:100%}
 }
 .modal .modal-header{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1rem;flex-shrink:0}
 .modal .modal-header h3{font-size:.95rem;font-weight:500}
@@ -359,8 +367,14 @@ VIDEOS.forEach(section => {
       const prog = getProgress(v.id);
       const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
       const watched = pct > 90;
-      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}')">
-        <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
+      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}">
+        <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
+          <div class="hover-actions">
+            <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','audio')">🎧 Audio</button>
+            <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')">▶ Player</button>
+            <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')">⛶ Full Screen</button>
+          </div>
+        </div>
         <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
         <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? `<span>${pct}%</span>` : ''}</div></div>
       </div>`;
@@ -414,12 +428,14 @@ function getProgress(id) {
   try { return JSON.parse(localStorage.getItem(`progress_${id}`)); } catch { return null; }
 }
 
-function openPlayer(videoId, title) {
+function openPlayer(videoId, title, mode) {
   currentVideoId = videoId;
   addToRecentlyPlayed(videoId);
   const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // Default mode: mobile=fullscreen, desktop=player
+  if (!mode) mode = isMobileDevice ? 'fullscreen' : 'player';
   document.getElementById('modal-title').textContent = title;
-  if (!isMobileDevice) {
+  if (mode !== 'fullscreen' || !isMobileDevice) {
     document.getElementById('modal').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -447,8 +463,13 @@ function openPlayer(videoId, title) {
     const seekFirst = prog && prog.position > 5 && (prog.position / prog.duration) < 0.95;
     if (seekFirst) return player.setCurrentTime(prog.position);
   }).then(() => {
-    if (isMobileDevice) {
+    if (mode === 'fullscreen') {
       return player.requestFullscreen().catch(() => {});
+    } else if (mode === 'audio') {
+      // Audio-only: play but hide the modal video area visually
+      document.querySelector('.modal .player-wrap').style.paddingTop = '0';
+      document.querySelector('.modal .player-wrap').style.height = '60px';
+      return player.play();
     } else {
       return player.play();
     }
@@ -517,6 +538,8 @@ function updateCardProgress(videoId, position, duration) {
 function closePlayer() {
   document.getElementById('modal').classList.remove('active');
   document.body.style.overflow = '';
+  const pw = document.querySelector('.modal .player-wrap');
+  if (pw) { pw.style.paddingTop = ''; pw.style.height = ''; }
   if (currentPlayer) {
     currentPlayer.destroy();
     currentPlayer = null;
@@ -556,8 +579,14 @@ function renderRecentlyPlayed() {
     const prog = getProgress(id);
     const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
     const watched = pct > 90;
-    return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}')">
-      <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
+    return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}">
+      <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
+        <div class="hover-actions">
+          <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','audio')">🎧 Audio</button>
+          <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')">▶ Player</button>
+          <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')">⛶ Full Screen</button>
+        </div>
+      </div>
       <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
       <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
     </div>`;
