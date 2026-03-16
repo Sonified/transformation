@@ -484,7 +484,7 @@ function openPlayer(videoId, title, mode) {
   // Default mode: mobile=fullscreen, desktop=player
   if (!mode) mode = isMobileDevice ? 'fullscreen' : 'player';
   document.getElementById('modal-title').textContent = title;
-  if (mode !== 'fullscreen' || !isMobileDevice) {
+  if (mode !== 'fullscreen') {
     document.getElementById('modal').classList.add('active');
     document.body.style.overflow = 'hidden';
   }
@@ -524,11 +524,10 @@ function openPlayer(videoId, title, mode) {
     }
   }).catch(() => {});
 
-  // On mobile, when exiting fullscreen, clean up immediately (no modal to dismiss)
-  if (isMobileDevice) {
+  // When exiting fullscreen, clean up (no modal to dismiss)
+  if (mode === 'fullscreen') {
     player.on('fullscreenchange', function(data) {
       if (!data.fullscreen) {
-        // Save final position before cleanup
         Promise.all([player.getCurrentTime(), player.getDuration()]).then(([pos, dur]) => {
           localStorage.setItem(`progress_${videoId}`, JSON.stringify({
             position: pos, duration: dur, timestamp: Date.now()
