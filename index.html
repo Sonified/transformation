@@ -139,6 +139,15 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-item .pi-progress{width:40px;height:3px;background:var(--progress-bg);border-radius:2px;overflow:hidden}
 .playlist-item .pi-progress .pi-fill{height:100%;background:var(--accent)}
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
+.pi-eq{display:none;align-items:flex-end;gap:2px;height:14px}
+.playlist-item.active .pi-eq{display:flex}
+.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px}
+.playlist-item.active.playing .pi-eq span{animation:eqBounce .6s ease-in-out infinite alternate}
+.playlist-item.active:not(.playing) .pi-eq span{height:3px !important}
+.pi-eq span:nth-child(1){animation-delay:0s;height:6px}
+.pi-eq span:nth-child(2){animation-delay:.2s;height:10px}
+.pi-eq span:nth-child(3){animation-delay:.4s;height:4px}
+@keyframes eqBounce{0%{height:3px}100%{height:14px}}
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
@@ -955,7 +964,11 @@ function audioSeekRel(sec) {
   if (!audioPlayer) return;
   audioPlayer.setVolume(1).catch(() => {});
   Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
-    audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec)));
+    const t = Math.max(0, Math.min(dur, pos + sec));
+    audioPlayer.setCurrentTime(t).then(() => {
+      // iOS requires play() after seek to actually move playback position
+      audioPlayer.play().catch(() => {});
+    }).catch(() => {});
   });
 }
 
@@ -977,7 +990,9 @@ function seekAudioNP(e) {
   const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   document.getElementById('np-fill').style.width = (pct * 100) + '%';
   audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * pct);
+    audioPlayer.setCurrentTime(dur * pct).then(() => {
+      audioPlayer.play().catch(() => {});
+    }).catch(() => {});
   });
 }
 
@@ -1004,7 +1019,9 @@ let apDragging = false;
     if (audioPlayer) {
       // Player exists — get duration and seek
       audioPlayer.getDuration().then(dur => {
-        audioPlayer.setCurrentTime(dur * p);
+        audioPlayer.setCurrentTime(dur * p).then(() => {
+          audioPlayer.play().catch(() => {});
+        }).catch(() => {});
       });
     } else if (audioVideoId && currentAudioDuration) {
       // Player not started yet but we have a track loaded in the UI — start it
