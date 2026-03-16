@@ -1139,9 +1139,11 @@ function seekAudioNPEnd(e) {
   npDragBar = null;
   document.getElementById('np-fill').style.width = (p * 100) + '%';
   audioPlayer.setVolume(1).catch(() => {});
-  audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * p).then(() => {
+  audioPlayer.getDuration().then(dur => {
+    audioPlayer.setCurrentTime(dur * p).catch(() => {});
+    // Call play independently — don't chain on setCurrentTime which can silently fail on iOS
     audioPlayer.play().catch(() => {});
-  })).catch(() => {});
+  });
 }
 
 let currentAudioDuration = 0;
