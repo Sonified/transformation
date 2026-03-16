@@ -985,6 +985,21 @@ function audioPlay(videoId, title) {
     quality: '360p'
   });
 
+  // Lock screen / notification controls
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: title,
+      artist: 'Dr. Joe Dispenza',
+      album: 'Transformation'
+    });
+    navigator.mediaSession.setActionHandler('play', () => audioPlayer && audioPlayer.play());
+    navigator.mediaSession.setActionHandler('pause', () => audioPlayer && audioPlayer.pause());
+    navigator.mediaSession.setActionHandler('previoustrack', () => audioSkip(-1));
+    navigator.mediaSession.setActionHandler('nexttrack', () => audioSkip(1));
+    navigator.mediaSession.setActionHandler('seekbackward', () => audioSeekRel(-15));
+    navigator.mediaSession.setActionHandler('seekforward', () => audioSeekRel(15));
+  }
+
   // User tapped a track — this IS the gesture. Keep play() direct.
   audioPlayer.ready().then(() => {
     audioPlayer.setVolume(1);
@@ -1014,6 +1029,14 @@ function audioPlay(videoId, title) {
     document.getElementById('np-time-cur').textContent = cur;
     document.getElementById('np-time-dur').textContent = tot;
 
+    // Update lock screen position
+    if ('mediaSession' in navigator && data.duration > 0) {
+      navigator.mediaSession.setPositionState({
+        duration: data.duration,
+        position: data.seconds,
+        playbackRate: 1
+      });
+    }
     // Save every 1s
     const now = Date.now();
     if (now - lastSave < 1000) return;
