@@ -120,10 +120,9 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .now-playing-progress .np-bar{flex:1;height:6px;background:var(--progress-bg);border-radius:3px;cursor:pointer;position:relative}
 .now-playing-progress .np-bar .np-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .2s}
 .now-playing-progress .np-time{font-size:.7rem;color:var(--text-dim);min-width:36px}
-.np-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:.3rem;transition:opacity .15s;font-weight:600}
-.np-btn:hover{opacity:.7}
+.np-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:.3rem;font-weight:600;-webkit-tap-highlight-color:transparent}
 .np-btn.np-play{width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center}
-.np-btn.np-play:hover{background:var(--accent-glow)}
+@media (hover:hover){.np-btn:hover{opacity:.7}.np-btn.np-play:hover{opacity:1;background:var(--accent-glow)}}
 .np-btn.np-skip{color:var(--text-dim)}
 .np-btn.np-seek{color:var(--text-dim)}
 
