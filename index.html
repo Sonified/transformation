@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#151520;--card-hover:#1c1c2e;--accent:#7c5cbf;--accent-glow:#9b7dd4;--text:#e0e0e0;--text-dim:#888;--progress-bg:#2a2a3a;--watched:#4caf50}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{text-align:center;padding:2.5rem 1rem 1.5rem;background:linear-gradient(180deg,#12121f 0%,var(--bg) 100%)}
+header h1{font-size:2rem;font-weight:300;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-glow)}
+header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.05em}
+.section{max-width:1200px;margin:0 auto;padding:0 1rem 2rem}
+.section h2{font-size:1.1rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin:2rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid #252535}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.card{background:var(--card);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .2s,background .2s;position:relative}
+.card:hover{transform:translateY(-3px);background:var(--card-hover)}
+.card .thumb{width:100%;aspect-ratio:16/9;background:#1a1a2a;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.card .thumb img{width:100%;height:100%;object-fit:cover}
+.card .thumb .placeholder{color:var(--text-dim);font-size:.8rem}
+.card .info{padding:.8rem 1rem}
+.card .info h3{font-size:.85rem;font-weight:500;line-height:1.3;margin-bottom:.4rem}
+.card .info .meta{font-size:.75rem;color:var(--text-dim);display:flex;align-items:center;gap:.5rem}
+.card .progress-bar{height:3px;background:var(--progress-bg);position:relative}
+.card .progress-bar .fill{height:100%;background:var(--accent);transition:width .3s}
+.card .watched-badge{position:absolute;top:8px;right:8px;background:var(--watched);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;display:none;z-index:2}
+.card.is-watched .watched-badge{display:flex}
+.card.is-watched .thumb img{opacity:.7}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.active{display:flex}
+.modal{width:100%;max-width:960px;background:#111;border-radius:12px;overflow:hidden}
+.modal .player-wrap{position:relative;padding-top:56.25%}
+.modal .player-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+.modal .modal-header{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1rem}
+.modal .modal-header h3{font-size:.95rem;font-weight:500}
+.modal .modal-header button{background:none;border:none;color:var(--text-dim);font-size:1.5rem;cursor:pointer;line-height:1}
+.modal .modal-header button:hover{color:#fff}
+
+/* Reset progress button */
+.reset-all{position:fixed;bottom:1rem;right:1rem;background:#333;color:var(--text-dim);border:none;padding:.4rem .8rem;border-radius:6px;font-size:.7rem;cursor:pointer;opacity:.4;transition:opacity .2s}
+.reset-all:hover{opacity:1;color:#fff}
+</style>
+</head>
+<body>
+<header>
+<h1>Transformation</h1>
+<p>Dr. Joe Dispenza — Progressive Online Workshop</p>
+</header>
+
+<div id="app"></div>
+
+<div class="modal-overlay" id="modal">
+<div class="modal">
+<div class="modal-header">
+<h3 id="modal-title"></h3>
+<button onclick="closePlayer()">&times;</button>
+</div>
+<div class="player-wrap">
+<div id="player-container"></div>
+</div>
+</div>
+</div>
+
+<button class="reset-all" onclick="if(confirm('Reset all progress?')){Object.keys(localStorage).filter(k=>k.startsWith('progress_')).forEach(k=>localStorage.removeItem(k));location.reload()}">Reset Progress</button>
+
+<script src="https://player.vimeo.com/api/player.js"></script>
+<script>
+const VIDEOS = [
+  {section:"Introduction",items:[
+    {id:"236185844",title:"Understanding the Power of Your Mind"}
+  ]},
+  {section:"Intensive Workshop",items:[
+    {id:"236186822",title:"Intensive Workshop Part 1"},
+    {id:"236186751",title:"Intensive Workshop Part 2"},
+    {id:"227864515",title:"Intensive Workshop Part 3"},
+    {id:"236185840",title:"Intensive Workshop Part 4"}
+  ]},
+  {section:"Week 1",items:[
+    {id:"240339751",title:"Week 1: Online Progressive Workshop Introduction"}
+  ]},
+  {section:"Week 2",items:[
+    {id:"240337381",title:"Week 2: Your Personality and Your Personal Reality"}
+  ]},
+  {section:"Week 3",items:[
+    {id:"240342396",title:"Week 3: Finding the Sweet Spot of the Generous Present Moment"},
+    {id:"240570900",title:"Week 3a: The Generous Present Moment Meditation"},
+    {id:"240337598",title:"Week 3b: After Meditation: Closing"}
+  ]},
+  {section:"Week 4",items:[
+    {id:"240344259",title:"Week 4: Tuning In to New Potentials"},
+    {id:"240583172",title:"Week 4a: Tuning In to New Potentials Meditation"},
+    {id:"240339801",title:"Week 4b: After Meditation: Closing"}
+  ]},
+  {section:"Week 5",items:[
+    {id:"240347069",title:"Week 5: The Science of Transformation"},
+    {id:"240331527",title:"Week 5a: Happy Faces Video"},
+    {id:"240342500",title:"Week 5b: After Happy Faces Video: Closing"}
+  ]},
+  {section:"Week 6",items:[
+    {id:"240356220",title:"Week 6: Pulling the Mind Out of the Body"}
+  ]},
+  {section:"Week 7",items:[
+    {id:"240349724",title:"Week 7: Reconditioning the Body to a New Mind"},
+    {id:"240350220",title:"Week 7b: After Dr. Joe's Workshop Videos"},
+    {id:"240587822",title:"Week 7c: Reconditioning The Body to a New Mind Meditation"},
+    {id:"240350312",title:"Week 7d: After Meditation: Closing"}
+  ]},
+  {section:"Week 8",items:[
+    {id:"240353953",title:"Week 8: Changing Beliefs and Perceptions"},
+    {id:"240684696",title:"Week 8a: Changing Beliefs and Perceptions Meditation"},
+    {id:"240350353",title:"Week 8b: After Meditation: Closing"}
+  ]},
+  {section:"Week 9",items:[
+    {id:"240356156",title:"Week 9: Blessing of the Energy Centers"},
+    {id:"240691530",title:"Week 9a: Blessing of The Energy Centers Meditation"},
+    {id:"240354028",title:"Week 9b: After Meditation: End of Workshop"}
+  ]}
+];
+
+const app = document.getElementById('app');
+let currentPlayer = null;
+let saveInterval = null;
+let currentVideoId = null;
+
+// Render sections
+VIDEOS.forEach(section => {
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  sec.innerHTML = `<h2>${section.section}</h2><div class="grid">${
+    section.items.map(v => {
+      const prog = getProgress(v.id);
+      const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
+      const watched = pct > 90;
+      return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}')">
+        <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
+        <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? `<span>${pct}%</span>` : ''}</div></div>
+      </div>`;
+    }).join('')
+  }</div>`;
+  app.appendChild(sec);
+});
+
+// Fetch thumbnails
+function loadThumbnails() {
+  const allVideos = VIDEOS.flatMap(s => s.items);
+  allVideos.forEach(v => {
+    const card = document.querySelector(`.card[data-id="${v.id}"]`);
+    if (!card) return;
+    const thumb = card.querySelector('.thumb');
+    // Check cache
+    const cached = sessionStorage.getItem(`oembed_${v.id}`);
+    if (cached) {
+      applyOembed(JSON.parse(cached), thumb, v.id);
+      return;
+    }
+    fetch(`https://vimeo.com/api/oembed.json?url=https://vimeo.com/${v.id}`)
+      .then(r => r.json())
+      .then(data => {
+        sessionStorage.setItem(`oembed_${v.id}`, JSON.stringify(data));
+        applyOembed(data, thumb, v.id);
+      })
+      .catch(() => {
+        thumb.querySelector('.placeholder').textContent = 'No preview';
+      });
+  });
+}
+
+function applyOembed(data, thumb, id) {
+  const img = document.createElement('img');
+  img.src = data.thumbnail_url;
+  img.alt = data.title;
+  img.loading = 'lazy';
+  const placeholder = thumb.querySelector('.placeholder');
+  if (placeholder) placeholder.remove();
+  thumb.prepend(img);
+  const dur = document.querySelector(`.duration[data-id="${id}"]`);
+  if (dur && data.duration) {
+    const m = Math.floor(data.duration / 60);
+    const s = String(data.duration % 60).padStart(2, '0');
+    dur.textContent = `${m}:${s}`;
+  }
+}
+
+function getProgress(id) {
+  try { return JSON.parse(localStorage.getItem(`progress_${id}`)); } catch { return null; }
+}
+
+function openPlayer(videoId, title) {
+  currentVideoId = videoId;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const container = document.getElementById('player-container');
+  container.innerHTML = '';
+  const iframe = document.createElement('div');
+  iframe.id = 'vimeo-player';
+  container.appendChild(iframe);
+
+  const player = new Vimeo.Player('vimeo-player', {
+    id: parseInt(videoId),
+    width: 960,
+    autoplay: true,
+    responsive: true
+  });
+
+  currentPlayer = player;
+
+  // Resume
+  const prog = getProgress(videoId);
+  if (prog && prog.position > 5 && (prog.position / prog.duration) < 0.95) {
+    player.ready().then(() => player.setCurrentTime(prog.position));
+  }
+
+  // Save progress every 5s
+  let lastSave = 0;
+  player.on('timeupdate', function(data) {
+    const now = Date.now();
+    if (now - lastSave < 5000) return;
+    lastSave = now;
+    localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+      position: data.seconds,
+      duration: data.duration,
+      timestamp: now
+    }));
+    updateCardProgress(videoId, data.seconds, data.duration);
+  });
+
+  player.on('ended', function() {
+    player.getDuration().then(dur => {
+      localStorage.setItem(`progress_${videoId}`, JSON.stringify({
+        position: dur,
+        duration: dur,
+        timestamp: Date.now()
+      }));
+      updateCardProgress(videoId, dur, dur);
+    });
+  });
+}
+
+function updateCardProgress(videoId, position, duration) {
+  const card = document.querySelector(`.card[data-id="${videoId}"]`);
+  if (!card) return;
+  const pct = Math.round((position / duration) * 100);
+  card.querySelector('.fill').style.width = pct + '%';
+  if (pct > 90) {
+    card.classList.add('is-watched');
+  }
+}
+
+function closePlayer() {
+  document.getElementById('modal').classList.remove('active');
+  document.body.style.overflow = '';
+  if (currentPlayer) {
+    currentPlayer.destroy();
+    currentPlayer = null;
+  }
+  currentVideoId = null;
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closePlayer();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayer(); });
+
+loadThumbnails();
+</script>
+</body>
+</html>
