@@ -144,14 +144,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
 .pi-eq{display:none;align-items:flex-end;gap:2px;height:14px}
 .playlist-item.active .pi-eq{display:flex}
-.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px}
-.playlist-item.active.playing .pi-eq span:nth-child(1){animation:eq1 .43s steps(4,jump-none) infinite}
-.playlist-item.active.playing .pi-eq span:nth-child(2){animation:eq2 .55s steps(5,jump-none) infinite}
-.playlist-item.active.playing .pi-eq span:nth-child(3){animation:eq3 .35s steps(3,jump-none) infinite}
-.playlist-item.active:not(.playing) .pi-eq span{height:3px !important}
-@keyframes eq1{0%{height:3px}25%{height:12px}50%{height:5px}75%{height:14px}100%{height:3px}}
-@keyframes eq2{0%{height:10px}20%{height:3px}40%{height:14px}60%{height:6px}80%{height:11px}100%{height:10px}}
-@keyframes eq3{0%{height:7px}33%{height:14px}66%{height:3px}100%{height:7px}}
+.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:3px;transition:height .35s ease-in-out}
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
@@ -787,6 +780,18 @@ loadThumbnails();
 // ── Audio Player Mode ──
 let audioPlayer = null;
 let audioVideoId = null;
+let eqInterval = null;
+function startEq() {
+  stopEq();
+  eqInterval = setInterval(() => {
+    const bars = document.querySelectorAll('.playlist-item.active.playing .pi-eq span');
+    bars.forEach(b => { b.style.height = (4 + Math.random() * 8) + 'px'; });
+  }, 400);
+}
+function stopEq() {
+  if (eqInterval) { clearInterval(eqInterval); eqInterval = null; }
+  document.querySelectorAll('.pi-eq span').forEach(b => { b.style.height = '3px'; });
+}
 let viewMode = localStorage.getItem('view_mode') || 'thumbnails';
 document.querySelectorAll('#view-mode .pill').forEach(p => {
   p.classList.toggle('active', p.dataset.mode === viewMode);
@@ -990,6 +995,7 @@ function audioPlay(videoId, title) {
     document.getElementById('ap-play-btn').textContent = '▶';
     document.querySelector('#np-play-icon .icon-play').style.display='';document.querySelector('#np-play-icon .icon-pause').style.display='none';
     document.querySelectorAll('.playlist-item.playing').forEach(el => el.classList.remove('playing'));
+    stopEq();
     Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
       localStorage.setItem(`progress_${videoId}`, JSON.stringify({
         position: pos, duration: dur, timestamp: Date.now()
@@ -1002,6 +1008,7 @@ function audioPlay(videoId, title) {
     document.querySelector('#np-play-icon .icon-play').style.display='none';document.querySelector('#np-play-icon .icon-pause').style.display='';
     const activeItem = document.querySelector('.playlist-item.active');
     if (activeItem) activeItem.classList.add('playing');
+    startEq();
   });
 
   audioPlayer.on('ended', function() {
