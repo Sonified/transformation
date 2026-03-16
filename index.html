@@ -1075,16 +1075,14 @@ function audioTogglePlay() {
   });
 }
 
-function audioSeekRel(sec) {
+async function audioSeekRel(sec) {
   if (!audioPlayer) return;
-  audioPlayer.setVolume(1).catch(() => {});
-  Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
-    const t = Math.max(0, Math.min(dur, pos + sec));
-    audioPlayer.setCurrentTime(t).then(() => {
-      // iOS requires play() after seek to actually move playback position
-      audioPlayer.play().catch(() => {});
-    }).catch(() => {});
-  });
+  try {
+    await audioPlayer.setVolume(1);
+    const [pos, dur] = await Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]);
+    await audioPlayer.setCurrentTime(Math.max(0, Math.min(dur, pos + sec)));
+    await audioPlayer.play();
+  } catch (err) {}
 }
 
 function audioSkip(dir) {
@@ -1113,17 +1111,19 @@ function seekAudioNP(e) {
   document.getElementById('np-fill').style.width = (npDragPct * 100) + '%';
 }
 
-function seekAudioNPClick(e) {
+async function seekAudioNPClick(e) {
   // Mouse click only — touch is handled by touchstart/end
   if (!audioPlayer) return;
   const bar = e.currentTarget;
   const rect = bar.getBoundingClientRect();
   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   document.getElementById('np-fill').style.width = (pct * 100) + '%';
-  audioPlayer.setVolume(1).catch(() => {});
-  audioPlayer.getDuration().then(dur => audioPlayer.setCurrentTime(dur * pct).then(() => {
-    audioPlayer.play().catch(() => {});
-  })).catch(() => {});
+  try {
+    await audioPlayer.setVolume(1);
+    const dur = await audioPlayer.getDuration();
+    await audioPlayer.setCurrentTime(dur * pct);
+    await audioPlayer.play();
+  } catch (err) {}
 }
 
 function seekAudioNPMove(e) {
@@ -1133,17 +1133,17 @@ function seekAudioNPMove(e) {
   document.getElementById('np-fill').style.width = (npDragPct * 100) + '%';
 }
 
-function seekAudioNPEnd(e) {
+async function seekAudioNPEnd(e) {
   if (!audioPlayer || !npDragBar) return;
   const p = e.changedTouches ? npBarPct(e, npDragBar) : npDragPct;
   npDragBar = null;
   document.getElementById('np-fill').style.width = (p * 100) + '%';
-  audioPlayer.setVolume(1).catch(() => {});
-  audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * p).catch(() => {});
-    // Call play independently — don't chain on setCurrentTime which can silently fail on iOS
-    audioPlayer.play().catch(() => {});
-  });
+  try {
+    await audioPlayer.setVolume(1);
+    const dur = await audioPlayer.getDuration();
+    await audioPlayer.setCurrentTime(dur * p);
+    await audioPlayer.play();
+  } catch (err) {}
 }
 
 let currentAudioDuration = 0;
