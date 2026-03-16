@@ -130,20 +130,20 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .playlist-container{max-width:800px;margin:0 auto;padding:0 1rem}
 .playlist-container .section{padding:0 0 1rem}
 .playlist-container .section h2{margin:1.2rem 0 .6rem}
-.playlist-item{display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-bottom:1px solid #1a1a2a;cursor:pointer;transition:background .15s;border-radius:6px}
+.playlist-item{display:flex;align-items:center;gap:.4rem;padding:.6rem .8rem;border-bottom:1px solid #1a1a2a;cursor:pointer;transition:background .15s;border-radius:6px}
 .playlist-item:hover{background:var(--card-hover)}
 .playlist-item.active{background:var(--card);border-left:3px solid var(--accent)}
-.playlist-item .pi-num{color:var(--text-dim);font-size:.75rem;min-width:24px;text-align:center}
+.playlist-item .pi-num{color:var(--text-dim);font-size:.75rem;min-width:18px;text-align:center;flex-shrink:0}
 .playlist-item.active .pi-num{color:var(--accent)}
-.playlist-item .pi-title{flex:1;font-size:.85rem}
+.pi-eq{display:none;align-items:flex-end;gap:2px;height:14px;flex-shrink:0;width:14px}
+.playlist-item.active.playing .pi-eq{display:flex}
+.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:0;transition:height .3s ease-out}
+.playlist-item .pi-title{flex:1;font-size:.85rem;margin-left:.1rem}
 .playlist-item.active .pi-title{color:var(--accent-glow)}
 .playlist-item .pi-dur{color:var(--text-dim);font-size:.75rem}
 .playlist-item .pi-progress{width:40px;height:3px;background:var(--progress-bg);border-radius:2px;overflow:hidden}
 .playlist-item .pi-progress .pi-fill{height:100%;background:var(--accent)}
 .playlist-item .pi-watched{color:var(--watched);font-size:.8rem}
-.pi-eq{display:none;align-items:flex-end;gap:2px;height:14px}
-.playlist-item.active.playing .pi-eq{display:flex}
-.pi-eq span{display:block;width:3px;background:var(--accent);border-radius:1px;height:0;transition:height .3s ease-out}
 
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
