@@ -1002,7 +1002,7 @@ function audioPlay(videoId, title) {
       document.getElementById('ap-fill').style.width = pct + '%';
       document.getElementById('ap-playhead').style.left = pct + '%';
     }
-    document.getElementById('np-fill').style.width = pct + '%';
+    if (!npDragBar) document.getElementById('np-fill').style.width = pct + '%';
     const cur = fmtTime(data.seconds);
     const tot = fmtTime(data.duration);
     document.getElementById('ap-time').textContent = `${cur} / ${tot}`;
