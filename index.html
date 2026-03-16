@@ -794,7 +794,34 @@ function setViewMode(mode) {
   document.querySelectorAll('#view-mode .pill').forEach(p => {
     p.classList.toggle('active', p.dataset.mode === mode);
   });
+
+  // Capture active playback for seamless handoff
+  let handoffId = null, handoffTitle = null;
+  let savePromise = Promise.resolve();
+
+  if (audioPlayer && audioVideoId) {
+    handoffId = audioVideoId;
+    const v = allVideosList.find(x => x.id === audioVideoId);
+    handoffTitle = v ? v.title : '';
+    savePromise = Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
+      localStorage.setItem(`progress_${handoffId}`, JSON.stringify({
+        position: pos, duration: dur, timestamp: Date.now()
+      }));
+    }).catch(() => {});
+  } else if (currentPlayer && currentVideoId) {
+    handoffId = currentVideoId;
+    const v = allVideosList.find(x => x.id === currentVideoId);
+    handoffTitle = v ? v.title : document.getElementById('modal-title').textContent;
+    savePromise = Promise.all([currentPlayer.getCurrentTime(), currentPlayer.getDuration()]).then(([pos, dur]) => {
+      localStorage.setItem(`progress_${handoffId}`, JSON.stringify({
+        position: pos, duration: dur, timestamp: Date.now()
+      }));
+    }).catch(() => {});
+  }
+
+  // Switch UI
   if (mode === 'audio') {
+    if (currentPlayer) closePlayer();
     document.getElementById('app').style.display = 'none';
     document.getElementById('recent-section').style.display = 'none';
     document.getElementById('playlist-view').style.display = '';
@@ -804,10 +831,27 @@ function setViewMode(mode) {
     document.getElementById('app').style.display = '';
     document.getElementById('playlist-view').style.display = 'none';
     document.getElementById('audio-bar').classList.remove('active');
-    // Clean up audio player
     if (audioPlayer) { audioPlayer.destroy(); audioPlayer = null; }
+    audioVideoId = null;
     renderRecentlyPlayed();
     loadThumbnails();
+  }
+
+  // Handoff: resume in new mode once position is saved
+  if (handoffId && handoffTitle) {
+    savePromise.then(() => {
+      if (mode === 'audio') {
+        audioPlay(handoffId, handoffTitle);
+      } else if (mode === 'fullscreen') {
+        if (currentPlayer && currentVideoId === handoffId) {
+          currentPlayer.requestFullscreen().catch(() => {});
+        } else {
+          openPlayer(handoffId, handoffTitle, 'fullscreen');
+        }
+      } else {
+        openPlayer(handoffId, handoffTitle, 'player');
+      }
+    });
   }
 }
 
@@ -828,6 +872,7 @@ function renderPlaylist() {
       const durStr = dur ? `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}` : '';
       html += `<div class="playlist-item${active}" data-id="${v.id}" onclick="audioPlay('${v.id}','${v.title.replace(/'/g,"\\'")}')">
         <span class="pi-num">${num}</span>
+        <span class="pi-eq"><span></span><span></span><span></span></span>
         <span class="pi-title">${v.title}</span>
         ${watched ? '<span class="pi-watched">✓</span>' : pct > 0 ? `<div class="pi-progress"><div class="pi-fill" style="width:${pct}%"></div></div>` : ''}
         <span class="pi-dur">${durStr}</span>
@@ -850,7 +895,9 @@ function audioPlay(videoId, title) {
 
   // Highlight active in playlist
   document.querySelectorAll('.playlist-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.id === videoId);
+    const isActive = el.dataset.id === videoId;
+    el.classList.toggle('active', isActive);
+    el.classList.toggle('playing', isActive);
   });
 
   // Destroy previous
@@ -919,6 +966,7 @@ function audioPlay(videoId, title) {
   audioPlayer.on('pause', function() {
     document.getElementById('ap-play-btn').textContent = '▶';
     document.querySelector('#np-play-icon .icon-play').style.display='';document.querySelector('#np-play-icon .icon-pause').style.display='none';
+    document.querySelectorAll('.playlist-item.playing').forEach(el => el.classList.remove('playing'));
     Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
       localStorage.setItem(`progress_${videoId}`, JSON.stringify({
         position: pos, duration: dur, timestamp: Date.now()
@@ -929,6 +977,8 @@ function audioPlay(videoId, title) {
   audioPlayer.on('play', function() {
     document.getElementById('ap-play-btn').textContent = '⏸';
     document.querySelector('#np-play-icon .icon-play').style.display='none';document.querySelector('#np-play-icon .icon-pause').style.display='';
+    const activeItem = document.querySelector('.playlist-item.active');
+    if (activeItem) activeItem.classList.add('playing');
   });
 
   audioPlayer.on('ended', function() {
