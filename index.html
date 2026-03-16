@@ -277,6 +277,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   </div>
 </div>
 <div class="ap-hidden-player" id="ap-hidden-player"></div>
+<audio id="silent-audio" loop playsinline style="display:none"></audio>
 
 <div id="recent-section" class="section" style="display:none">
   <h2>Recently Played</h2>
@@ -985,6 +986,14 @@ function audioPlay(videoId, title) {
     quality: '360p'
   });
 
+  // Silent audio to claim iOS background audio session
+  const silentAudio = document.getElementById('silent-audio');
+  if (!silentAudio.src) {
+    // Tiny silent WAV (~44 bytes of silence, looped)
+    silentAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+  }
+  silentAudio.play().catch(() => {});
+
   // Lock screen / notification controls
   if ('mediaSession' in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -1048,6 +1057,7 @@ function audioPlay(videoId, title) {
   });
 
   audioPlayer.on('pause', function() {
+    document.getElementById('silent-audio').pause();
     document.getElementById('ap-play-btn').textContent = '▶';
     document.querySelector('#np-play-icon .icon-play').style.display='';document.querySelector('#np-play-icon .icon-pause').style.display='none';
     document.querySelectorAll('.playlist-item.playing').forEach(el => el.classList.remove('playing'));
@@ -1060,6 +1070,7 @@ function audioPlay(videoId, title) {
   });
 
   audioPlayer.on('play', function() {
+    document.getElementById('silent-audio').play().catch(() => {});
     document.getElementById('ap-play-btn').textContent = '⏸';
     document.querySelector('#np-play-icon .icon-play').style.display='none';document.querySelector('#np-play-icon .icon-pause').style.display='';
     const activeItem = document.querySelector('.playlist-item.active');
