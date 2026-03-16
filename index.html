@@ -42,12 +42,13 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .card.is-watched .watched-badge{display:flex}
 .card.is-watched .thumb img{opacity:.7}
 
-/* Card hover overlay */
-.card .hover-actions{position:absolute;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;gap:.8rem;z-index:3}
-.card:hover .hover-actions{display:flex}
-.hover-actions button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:.5rem .8rem;border-radius:8px;font-size:.75rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:background .15s}
-.hover-actions button:hover{background:rgba(255,255,255,.3)}
-.hover-actions button svg{width:16px;height:16px;fill:currentColor}
+/* Card split click zones */
+.card .click-zones{position:absolute;inset:0;display:flex;z-index:3}
+.card .click-zone{flex:1;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.card:hover .click-zone{opacity:1}
+.card .click-zone.zone-player{background:rgba(0,0,0,.5);border-right:1px solid rgba(255,255,255,.1)}
+.card .click-zone.zone-fullscreen{background:rgba(0,0,0,.5)}
+.click-zone span{color:#fff;font-size:.75rem;font-weight:500;background:rgba(255,255,255,.15);padding:.4rem .7rem;border-radius:6px}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:2rem}
@@ -484,10 +485,9 @@ VIDEOS.forEach(section => {
       const watched = pct > 90;
       return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}">
         <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
-          <div class="hover-actions">
-            <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','audio')">🎧 Audio</button>
-            <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')">▶ Player</button>
-            <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')">⛶ Full Screen</button>
+          <div class="click-zones">
+            <div class="click-zone zone-player" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')"><span>▶ Player</span></div>
+            <div class="click-zone zone-fullscreen" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')"><span>⛶ Full Screen</span></div>
           </div>
         </div>
         <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
@@ -688,10 +688,9 @@ function renderRecentlyPlayed() {
     const watched = pct > 90;
     return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}">
       <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div>
-        <div class="hover-actions">
-          <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','audio')">🎧 Audio</button>
-          <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')">▶ Player</button>
-          <button onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')">⛶ Full Screen</button>
+        <div class="click-zones">
+          <div class="click-zone zone-player" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','player')"><span>▶ Player</span></div>
+          <div class="click-zone zone-fullscreen" onclick="event.stopPropagation();openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}','fullscreen')"><span>⛶ Full Screen</span></div>
         </div>
       </div>
       <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
