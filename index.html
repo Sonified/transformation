@@ -103,7 +103,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .ap-progress .ap-tick-label{position:absolute;bottom:100%;transform:translateX(-50%);font-size:.6rem;color:var(--text-dim);white-space:nowrap}
 .ap-progress .ap-hover-time{position:absolute;bottom:100%;transform:translateX(-50%);background:#222;color:#fff;font-size:.7rem;padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity .1s;margin-bottom:4px}
 .ap-progress:hover .ap-hover-time{opacity:1}
-.ap-hidden-player{position:fixed;bottom:-500px;left:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
+.ap-hidden-player{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:.01;pointer-events:none}
 
 /* Now Playing card */
 .now-playing{max-width:800px;margin:1rem auto;padding:0 1rem}
@@ -140,12 +140,15 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 /* Mobile: now-playing fixed at bottom */
 @media (max-width: 768px) {
   .audio-player-bar{display:none !important}
-  .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:.5rem}
-  .now-playing-card{border-radius:12px 12px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5)}
+  .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:0}
+  .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:1rem 1.2rem calc(1.2rem + env(safe-area-inset-bottom))}
   .now-playing-card.active{display:block}
-  .playlist-container{padding-bottom:14rem}
-  .np-btn.np-play{width:64px;height:64px}
+  .playlist-container{padding-bottom:16rem}
+  .np-btn.np-play{width:64px;height:64px;min-width:64px;min-height:64px}
   .np-btn.np-play svg{width:32px;height:32px}
+  .np-btn.np-seek svg{width:36px;height:36px}
+  .np-btn.np-skip svg{width:30px;height:30px}
+  .now-playing-controls{gap:1rem}
 }
 
 /* Recently played */
@@ -209,7 +212,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
       <div class="now-playing-controls">
         <button class="np-btn np-skip" onclick="audioSkip(-1)" title="Previous"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
         <button class="np-btn np-seek" onclick="audioSeekRel(-15)" title="Back 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
-        <button class="np-btn np-play" id="np-play-btn" onclick="audioTogglePlay()"><svg id="np-play-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg></button>
+        <button class="np-btn np-play" id="np-play-btn" onclick="audioTogglePlay()"><svg id="np-play-icon" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon class="icon-play" points="5,3 19,12 5,21"/><g class="icon-pause" style="display:none"><rect x="5" y="3" width="5" height="18"/><rect x="14" y="3" width="5" height="18"/></g></svg></button>
         <button class="np-btn np-seek" onclick="audioSeekRel(15)" title="Forward 15s"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" font-family="sans-serif">15</text></svg></button>
         <button class="np-btn np-skip" onclick="audioSkip(1)" title="Next"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
       </div>
@@ -768,7 +771,7 @@ function audioPlay(videoId, title) {
   document.getElementById('ap-play-btn').textContent = '⏸';
   // Now Playing card
   document.getElementById('np-title').textContent = title;
-  document.getElementById('np-play-icon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  document.querySelector('#np-play-icon .icon-play').style.display='none';document.querySelector('#np-play-icon .icon-pause').style.display='';
   document.getElementById('now-playing-card').classList.add('active');
 
   // Highlight active in playlist
@@ -829,7 +832,7 @@ function audioPlay(videoId, title) {
 
   audioPlayer.on('pause', function() {
     document.getElementById('ap-play-btn').textContent = '▶';
-    document.getElementById('np-play-icon').innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+    document.querySelector('#np-play-icon .icon-play').style.display='';document.querySelector('#np-play-icon .icon-pause').style.display='none';
     Promise.all([audioPlayer.getCurrentTime(), audioPlayer.getDuration()]).then(([pos, dur]) => {
       localStorage.setItem(`progress_${videoId}`, JSON.stringify({
         position: pos, duration: dur, timestamp: Date.now()
@@ -839,7 +842,7 @@ function audioPlay(videoId, title) {
 
   audioPlayer.on('play', function() {
     document.getElementById('ap-play-btn').textContent = '⏸';
-    document.getElementById('np-play-icon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    document.querySelector('#np-play-icon .icon-play').style.display='none';document.querySelector('#np-play-icon .icon-pause').style.display='';
   });
 
   audioPlayer.on('ended', function() {
