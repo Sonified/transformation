@@ -875,8 +875,7 @@ function setViewMode(mode) {
 function renderPlaylist() {
   const el = document.getElementById('playlist-container');
   let html = '';
-  const recentId = getRecentlyPlayed()[0];
-  const recentV = recentId ? allVideosList.find(x => x.id === recentId) : null;
+  const recentV = audioVideoId ? allVideosList.find(x => x.id === audioVideoId) : null;
   if (recentV) {
     const rProg = getProgress(recentV.id);
     const rPct = rProg ? Math.round((rProg.position / rProg.duration) * 100) : 0;
