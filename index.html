@@ -7,6 +7,19 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0a0a0f;--card:#151520;--card-hover:#1c1c2e;--accent:#7c5cbf;--accent-glow:#9b7dd4;--text:#e0e0e0;--text-dim:#888;--progress-bg:#2a2a3a;--watched:#4caf50}
+
+/* Auth gate */
+.auth-gate{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.auth-gate.hidden{display:none}
+.auth-box{background:var(--card);border:1px solid #252535;border-radius:12px;padding:32px;max-width:360px;width:90%;text-align:center}
+.auth-box h2{font-size:1.4rem;font-weight:300;letter-spacing:.1em;color:var(--accent-glow);margin-bottom:8px}
+.auth-box p{color:var(--text-dim);font-size:.85rem;margin-bottom:20px}
+.auth-box input{width:100%;padding:10px 12px;font-size:15px;background:var(--bg);color:var(--text);border:1px solid #333;border-radius:6px;text-align:center;letter-spacing:2px}
+.auth-box input:focus{outline:none;border-color:var(--accent)}
+.auth-box button{margin-top:12px;width:100%;padding:10px;font-size:15px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;transition:opacity .15s}
+.auth-box button:disabled{opacity:.3;cursor:default}
+.auth-box button:not(:disabled):hover{opacity:.85}
+.auth-error{color:#f85149;font-size:.8rem;margin-top:8px;min-height:20px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 header{text-align:center;padding:2.5rem 1rem 1.5rem;background:linear-gradient(180deg,#12121f 0%,var(--bg) 100%)}
 header h1{font-size:2rem;font-weight:300;letter-spacing:.15em;text-transform:uppercase;color:var(--accent-glow)}
@@ -56,6 +69,19 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 </style>
 </head>
 <body>
+
+<!-- Auth Gate -->
+<div class="auth-gate" id="authGate">
+  <div class="auth-box">
+    <h2>Transformation</h2>
+    <p>Enter password to continue</p>
+    <input type="password" id="authInput" placeholder="Password" autocomplete="off"
+      oninput="document.getElementById('authBtn').disabled = !this.value.trim()" />
+    <div class="auth-error" id="authError"></div>
+    <button id="authBtn" onclick="tryAuth()" disabled>Enter</button>
+  </div>
+</div>
+
 <header>
 <h1>Transformation</h1>
 <p>Dr. Joe Dispenza — Progressive Online Workshop</p>
@@ -96,6 +122,90 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <button class="reset-all" onclick="if(confirm('Reset all progress?')){Object.keys(localStorage).filter(k=>k.startsWith('progress_')).forEach(k=>localStorage.removeItem(k));location.reload()}">Reset Progress</button>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
+<script>
+// Auth gate with 4x exponential lockout
+(function() {
+  const PWD = 'transformationsurprise';
+  const gate = document.getElementById('authGate');
+  const input = document.getElementById('authInput');
+  const btn = document.getElementById('authBtn');
+  const errorEl = document.getElementById('authError');
+
+  // Check if already authed
+  if (localStorage.getItem('transformation_auth') === 'yes') {
+    gate.classList.add('hidden');
+  } else {
+    // Hide content behind gate
+    document.querySelector('header').style.visibility = 'hidden';
+    document.getElementById('app').style.visibility = 'hidden';
+    document.querySelector('.controls').style.visibility = 'hidden';
+  }
+
+  let fails = parseInt(localStorage.getItem('auth_fails') || '0');
+  let lockoutTimer = null;
+
+  // Check if currently locked out
+  const lockedUntil = parseInt(localStorage.getItem('auth_locked_until') || '0');
+  if (lockedUntil > Date.now()) {
+    startLockout(Math.ceil((lockedUntil - Date.now()) / 1000));
+  }
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !btn.disabled) tryAuth(); });
+
+  window.tryAuth = function() {
+    if (input.value.trim() === PWD) {
+      localStorage.setItem('transformation_auth', 'yes');
+      localStorage.removeItem('auth_fails');
+      localStorage.removeItem('auth_locked_until');
+      gate.classList.add('hidden');
+      document.querySelector('header').style.visibility = '';
+      document.getElementById('app').style.visibility = '';
+      document.querySelector('.controls').style.visibility = '';
+    } else {
+      fails++;
+      localStorage.setItem('auth_fails', fails);
+      input.value = '';
+      input.focus();
+
+      if (fails === 1) {
+        errorEl.textContent = 'Wrong password';
+        return;
+      }
+
+      // Lockout: 5s × 4^(fails-2) → 5s, 20s, 80s, 320s...
+      const lockoutSec = 5 * Math.pow(4, fails - 2);
+      localStorage.setItem('auth_locked_until', Date.now() + lockoutSec * 1000);
+      startLockout(lockoutSec);
+    }
+  };
+
+  function startLockout(totalSec) {
+    btn.disabled = true;
+    input.disabled = true;
+    if (lockoutTimer) clearInterval(lockoutTimer);
+    let remaining = totalSec;
+    function tick() {
+      if (remaining <= 0) {
+        clearInterval(lockoutTimer);
+        lockoutTimer = null;
+        btn.disabled = !input.value.trim();
+        input.disabled = false;
+        errorEl.textContent = '';
+        input.focus();
+        return;
+      }
+      const m = Math.floor(remaining / 60);
+      const s = String(remaining % 60).padStart(2, '0');
+      const fmt = m > 0 ? `${m}:${s}` : `${remaining}s`;
+      btn.textContent = fmt;
+      errorEl.textContent = 'Too many attempts';
+      remaining--;
+    }
+    tick();
+    lockoutTimer = setInterval(tick, 1000);
+  }
+})();
+</script>
 <script>
 const VIDEOS = [
   {section:"Introduction",items:[
