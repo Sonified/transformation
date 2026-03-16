@@ -152,7 +152,9 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   header p{margin-top:.2rem;font-size:.8rem}
   .controls{gap:1rem;padding:.4rem 1rem}
   .audio-player-bar{display:none !important}
-  .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:0}
+  .now-playing{position:fixed;bottom:0;left:0;right:0;z-index:900;margin:0;padding:0;touch-action:none;overflow:hidden}
+  #np-player-container{touch-action:none}
+  #np-player-container::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;z-index:1}
   .now-playing-card{border-radius:16px 16px 0 0;box-shadow:0 -8px 32px rgba(0,0,0,.5);padding:.8rem 1.2rem calc(1rem + env(safe-area-inset-bottom))}
   .now-playing-card::after{content:'';display:block;position:absolute;left:0;right:0;top:100%;height:100vh;background:#151520;pointer-events:auto}
   .now-playing-card.active{display:block;position:relative}
