@@ -624,7 +624,12 @@ function openPlayer(videoId, title, mode) {
       document.querySelector('.modal .player-wrap').style.paddingTop = '0';
       document.querySelector('.modal .player-wrap').style.height = '60px';
     } else if (mode === 'fullscreen') {
-      player.play().then(() => player.requestFullscreen()).catch(() => {});
+      // On mobile, playsinline:false handles native fullscreen automatically.
+      // On desktop, we need to request it via JS.
+      const isMob = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (!isMob) {
+        player.play().then(() => player.requestFullscreen()).catch(() => {});
+      }
     }
   }).catch(() => {});
 
