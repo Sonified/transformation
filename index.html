@@ -519,6 +519,15 @@ document.getElementById('modal').addEventListener('click', function(e) {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayer(); });
 
 loadThumbnails();
+
+// Restore scroll position
+const savedScroll = localStorage.getItem('scroll_y');
+if (savedScroll) window.scrollTo(0, parseInt(savedScroll));
+let scrollTimer;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => localStorage.setItem('scroll_y', window.scrollY), 200);
+}, {passive: true});
 </script>
 </body>
 </html>
