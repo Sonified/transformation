@@ -526,6 +526,7 @@ function loadThumbnails() {
 }
 
 function applyOembed(data, thumb, id) {
+  if (thumb.querySelector('img')) return; // already loaded
   const img = document.createElement('img');
   img.src = data.thumbnail_url;
   img.alt = data.title;
