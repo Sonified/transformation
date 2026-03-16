@@ -253,7 +253,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
       </div>
       <div class="now-playing-progress">
         <span class="np-time" id="np-time-cur">0:00</span>
-        <div class="np-bar" onclick="seekAudioNP(event)" ontouchstart="seekAudioNP(event)"><div class="np-fill" id="np-fill"></div></div>
+        <div class="np-bar" onclick="seekAudioNP(event)" ontouchstart="seekAudioNP(event)" ontouchmove="seekAudioNPMove(event)" ontouchend="seekAudioNPEnd(event)"><div class="np-fill" id="np-fill"></div></div>
         <span class="np-time" id="np-time-dur">0:00</span>
       </div>
     </div>
@@ -1054,16 +1054,44 @@ function audioSkip(dir) {
   audioPlay(v.id, v.title);
 }
 
+let npDragPct = 0;
+let npDragBar = null;
+
+function npBarPct(e, bar) {
+  const rect = bar.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+  return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+}
+
 function seekAudioNP(e) {
   if (!audioPlayer) return;
+  e.preventDefault();
   audioPlayer.setVolume(1).catch(() => {});
-  const bar = e.currentTarget;
-  const rect = bar.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-  document.getElementById('np-fill').style.width = (pct * 100) + '%';
+  npDragBar = e.currentTarget;
+  npDragPct = npBarPct(e, npDragBar);
+  document.getElementById('np-fill').style.width = (npDragPct * 100) + '%';
+  // For click (non-drag), seek immediately
   audioPlayer.getDuration().then(dur => {
-    audioPlayer.setCurrentTime(dur * pct).then(() => {
+    audioPlayer.setCurrentTime(dur * npDragPct).then(() => {
+      audioPlayer.play().catch(() => {});
+    }).catch(() => {});
+  });
+}
+
+function seekAudioNPMove(e) {
+  if (!audioPlayer || !npDragBar) return;
+  e.preventDefault();
+  npDragPct = npBarPct(e, npDragBar);
+  document.getElementById('np-fill').style.width = (npDragPct * 100) + '%';
+}
+
+function seekAudioNPEnd(e) {
+  if (!audioPlayer || !npDragBar) return;
+  const p = e.changedTouches ? npBarPct(e, npDragBar) : npDragPct;
+  npDragBar = null;
+  document.getElementById('np-fill').style.width = (p * 100) + '%';
+  audioPlayer.getDuration().then(dur => {
+    audioPlayer.setCurrentTime(dur * p).then(() => {
       audioPlayer.play().catch(() => {});
     }).catch(() => {});
   });
