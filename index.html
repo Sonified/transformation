@@ -68,6 +68,12 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 .toggle.on::after{transform:translateX(16px)}
 .sleep-active{color:var(--accent-glow);font-size:.75rem;font-weight:500}
 
+/* Recently played */
+.recent-row{display:flex;gap:1rem;overflow-x:auto;padding-bottom:.5rem;-webkit-overflow-scrolling:touch}
+.recent-row::-webkit-scrollbar{height:4px}
+.recent-row::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.recent-row .card{min-width:220px;max-width:220px;flex-shrink:0}
+
 /* Reset progress button */
 .reset-all{position:fixed;bottom:1rem;right:1rem;background:#333;color:var(--text-dim);border:none;padding:.4rem .8rem;border-radius:6px;font-size:.7rem;cursor:pointer;opacity:.4;transition:opacity .2s}
 .reset-all:hover{opacity:1;color:#fff}
@@ -110,6 +116,10 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   </label>
 </div>
 
+<div id="recent-section" class="section" style="display:none">
+  <h2>Recently Played</h2>
+  <div class="recent-row" id="recent-row"></div>
+</div>
 <div id="app"></div>
 
 <div class="modal-overlay" id="modal">
@@ -406,6 +416,7 @@ function getProgress(id) {
 
 function openPlayer(videoId, title) {
   currentVideoId = videoId;
+  addToRecentlyPlayed(videoId);
   const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   document.getElementById('modal-title').textContent = title;
   if (!isMobileDevice) {
@@ -518,6 +529,42 @@ document.getElementById('modal').addEventListener('click', function(e) {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePlayer(); });
 
+// Recently played
+const allVideosList = VIDEOS.flatMap(s => s.items);
+
+function getRecentlyPlayed() {
+  try { return JSON.parse(localStorage.getItem('recently_played') || '[]'); } catch { return []; }
+}
+
+function addToRecentlyPlayed(videoId) {
+  let recent = getRecentlyPlayed().filter(id => id !== videoId);
+  recent.unshift(videoId);
+  if (recent.length > 10) recent = recent.slice(0, 10);
+  localStorage.setItem('recently_played', JSON.stringify(recent));
+  renderRecentlyPlayed();
+}
+
+function renderRecentlyPlayed() {
+  const recent = getRecentlyPlayed();
+  const section = document.getElementById('recent-section');
+  const row = document.getElementById('recent-row');
+  if (!recent.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  row.innerHTML = recent.map(id => {
+    const v = allVideosList.find(x => x.id === id);
+    if (!v) return '';
+    const prog = getProgress(id);
+    const pct = prog ? Math.round((prog.position / prog.duration) * 100) : 0;
+    const watched = pct > 90;
+    return `<div class="card ${watched ? 'is-watched' : ''}" data-id="${v.id}" onclick="openPlayer('${v.id}','${v.title.replace(/'/g,"\\'")}')">
+      <div class="thumb"><div class="placeholder">Loading...</div><div class="watched-badge">✓</div></div>
+      <div class="progress-bar"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="info"><h3>${v.title}</h3><div class="meta"><span class="duration" data-id="${v.id}"></span>${pct > 0 && !watched ? '<span>'+pct+'%</span>' : ''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+renderRecentlyPlayed();
 loadThumbnails();
 
 // Restore scroll position
