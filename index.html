@@ -303,7 +303,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
 <script>
 // Auth gate with 4x exponential lockout
 (function() {
-  const PWD = 'surprise';
+  const PASSWORDS = ['surprise', 'TrustGod2'];
   const gate = document.getElementById('authGate');
   const input = document.getElementById('authInput');
   const btn = document.getElementById('authBtn');
@@ -331,7 +331,7 @@ header p{color:var(--text-dim);margin-top:.4rem;font-size:.9rem;letter-spacing:.
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !btn.disabled) tryAuth(); });
 
   window.tryAuth = function() {
-    if (input.value.trim() === PWD) {
+    if (PASSWORDS.includes(input.value.trim())) {
       localStorage.setItem('transformation_auth', 'yes');
       localStorage.removeItem('auth_fails');
       localStorage.removeItem('auth_locked_until');
